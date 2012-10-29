@@ -10,7 +10,8 @@ setup(
     install_requires=["python-dateutil",
                       "requests",
                       "iso8601",
-                      "clint", ],
+                      "clint",
+                      "kombu", ],
     entry_points={
         'console_scripts': [
             'p2pci = p2p.command:content_item_cli',

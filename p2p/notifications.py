@@ -33,6 +33,7 @@ and "D" for deletes.
 from kombu import Exchange, Queue, Connection
 from kombu.mixins import ConsumerMixin
 from kombu.utils.debug import setup_logging
+import json
 
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
