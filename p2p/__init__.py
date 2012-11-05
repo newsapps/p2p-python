@@ -327,9 +327,9 @@ class P2P(object):
             if collection_layout is None:
                 resp = self.get('/current_collections/%s.json' % slug, query)
                 collection_layout = resp['collection_layout']
+                collection_layout['code'] = slug  # response is missing this
                 self.cache.save_collection_layout(
                     collection_layout, query=query)
-                collection_layout['code'] = slug  # response is missing this
 
         return collection_layout
 
