@@ -148,7 +148,7 @@ class P2P(object):
                 self.cache.save_content_item(ci, query=query)
         return ci
 
-    def get_multi_content_items(self, ids, query=None):
+    def get_multi_content_items(self, ids, query=None, force_update=False):
         """
         Get a bunch of content items at once. We need to use the content items
         ids to use this API call.
@@ -169,14 +169,21 @@ class P2P(object):
 
         # Pull as many items out of cache as possible
         for id in ids:
-            ci = self.cache.get_content_item(id=id, query=query)
-            if ci is None:
+            if force_update:
                 items.append({
                     "id": id,
                     "if_modified_since": self.formatdate(if_modified_since),
                 })
             else:
-                ret.append(ci)
+                ci = self.cache.get_content_item(id=id, query=query)
+                if ci is None:
+                    items.append({
+                        "id": id,
+                        "if_modified_since": self.formatdate(
+                            if_modified_since),
+                    })
+                else:
+                    ret.append(ci)
 
         if len(items) > 0:
             # We can only request 25 things at a time
@@ -291,42 +298,55 @@ class P2P(object):
         resp = self.get("/content_items/search.json", params)
         return resp
 
-    def get_collection(self, slug, query=None):
-        collection = self.cache.get_collection(slug, query=query)
-
-        if collection is None:
+    def get_collection(self, slug, query=None, force_update=False):
+        if force_update:
             data = self.get('/collections/%s.json' % slug, query)
             collection = data['collection']
             self.cache.save_collection(collection, query=query)
+        else:
+            collection = self.cache.get_collection(slug, query=query)
+            if collection is None:
+                data = self.get('/collections/%s.json' % slug, query)
+                collection = data['collection']
+                self.cache.save_collection(collection, query=query)
 
         return collection
 
-    def get_collection_layout(self, slug, query=None):
+    def get_collection_layout(self, slug, query=None, force_update=False):
         if not query:
             query = {'include': 'items'}
 
-        collection_layout = self.cache.get_collection_layout(slug, query=query)
-
-        if collection_layout is None:
+        if force_update:
             resp = self.get('/current_collections/%s.json' % slug, query)
             collection_layout = resp['collection_layout']
             collection_layout['code'] = slug  # response is missing this
             self.cache.save_collection_layout(collection_layout, query=query)
+        else:
+            collection_layout = self.cache.get_collection_layout(
+                slug, query=query)
+            if collection_layout is None:
+                resp = self.get('/current_collections/%s.json' % slug, query)
+                collection_layout = resp['collection_layout']
+                self.cache.save_collection_layout(
+                    collection_layout, query=query)
+                collection_layout['code'] = slug  # response is missing this
 
         return collection_layout
 
     def get_fancy_collection(self, slug, with_collection=False,
-                             limit_items=25, content_item_query=None):
+                             limit_items=25, content_item_query=None,
+                             force_update=False):
         """
         Make a few API calls to fetch all possible data for a collection
         and its content items. Returns a collection layout with
         extra 'collection' key on the layout, and a 'content_item' key
         on each layout item.
         """
-        collection_layout = self.get_collection_layout(slug)
+        collection_layout = self.get_collection_layout(
+            slug, force_update=force_update)
         if with_collection:
             # Do we want more detailed data about the collection?
-            collection = self.get_collection(slug)
+            collection = self.get_collection(slug, force_update=force_update)
 
             collection_layout['collection'] = collection
 
