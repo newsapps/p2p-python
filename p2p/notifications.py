@@ -1,4 +1,8 @@
 """
+
+BUGGY, DO NOT USE!!!!
+---------------------
+
 P2P Notification Listener
 -------------------------
 Connect to Tribune's RabbitMQ server to recieve notifications when
