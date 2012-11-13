@@ -360,7 +360,7 @@ class P2P(object):
         ]
 
         content_items = self.get_multi_content_items(
-            content_item_ids, query=content_item_query)
+            content_item_ids, query=content_item_query, force_update=force_update)
 
         for ci in collection_layout['items']:
             for ci2 in content_items:
