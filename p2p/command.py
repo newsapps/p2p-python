@@ -9,6 +9,8 @@ import json
 from __init__ import get_connection
 from clint.textui import puts, colored, indent
 
+from notifications import start_listening
+
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -90,9 +92,39 @@ def content_item_cli():
             if args.field_name in data:
                 print(data[args.field_name])
             else:
-                pp.pprint(data)
+                print(json.dumps(data))
         except requests.exceptions.HTTPError, e:
             print(e.message)
             print(e.__dict__['response'].content)
 
 
+def runwatcher():
+    commands_description = """%(prog)s"""
+
+    parser = argparse.ArgumentParser(
+        usage="%(prog)s [options] slug",
+        description=commands_description)
+    parser.add_argument("slug",
+                        help="Slug of the thing you want to watch.")
+
+    parser.add_argument("-u", "--url", dest="url", default=None,
+                        help="RabbitMQ URL to connect to.")
+
+    #parser.add_argument("-c", "--collection", dest="collection",
+                        #action='store_true', help="Look for collections.")
+    #parser.add_argument("-i", "--item", dest="item",
+                        #action='store_true', help="Look for items.")
+
+    args = parser.parse_args()
+
+    def print_message(message):
+        if "slug" in message and message['slug'] == args.slug:
+            print(json.dumps(message))
+        elif "code" in message and message['code'] == args.slug:
+            print(json.dumps(message))
+
+    start_listening(
+        'watcher',
+        args.url,
+        print_message,
+        'chinews')

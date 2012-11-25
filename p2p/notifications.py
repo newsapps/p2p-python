@@ -45,22 +45,25 @@ pp = pprint.PrettyPrinter(indent=4)
 
 class Listener(ConsumerMixin):
 
-    def __init__(self, connection, name, callback):
+    def __init__(self, connection, name, callback, product_code):
         """
         Setup connection, setup queues, and bind them to the exchange
         """
         self.connection = connection
         self.callback = callback
+        self.product_affiliate_code = product_code
         self.exchange = Exchange('updated_content')
         self.queues = [
             Queue(name + '_content_items',
                   exchange=self.exchange,
-                  routing_key='update.content_item',
-                  channel=self.connection.default_channel),
+                  routing_key='update.content_item.%s' % self.product_affiliate_code,
+                  channel=self.connection,
+                  auto_delete=True),
             Queue(name + '_collections',
                   exchange=self.exchange,
-                  routing_key='update.collection',
-                  channel=self.connection.default_channel),
+                  routing_key='update.collection.%s' % self.product_affiliate_code,
+                  channel=self.connection,
+                  auto_delete=True),
         ]
 
         for queue in self.queues:
@@ -85,17 +88,8 @@ class Listener(ConsumerMixin):
         self.callback(json.loads(body))
         message.ack()
 
-    def on_consume_end(self, connection, channel, consumers):
-        """
-        Teardown queues. Since we manually declared and bound our
-        queues, we have to tear them down.
-        """
-        for queue in self.queues:
-            queue.unbind()
-            queue.delete()
 
-
-def start_listening(name, amqp_url=None, callback=None):
+def start_listening(name, amqp_url=None, callback=None, product_code=None):
     """
     Connect to the messaging server and listen for notifications. Takes
     the URL of the server to connect to and a function to call for every
@@ -128,9 +122,12 @@ def start_listening(name, amqp_url=None, callback=None):
 
     with Connection(amqp_url) as conn:
         try:
-            Listener(conn, name, callback).run()
+            Listener(conn, name, callback, product_code).run()
         except KeyboardInterrupt:
-            print('bye bye')
+            conn.release()
+        except:
+            conn.release()
+            raise
 
 
 class P2PNotificationError(Exception):

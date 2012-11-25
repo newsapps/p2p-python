@@ -15,6 +15,7 @@ setup(
     entry_points={
         'console_scripts': [
             'p2pci = p2p.command:content_item_cli',
+            'p2pwatcher = p2p.command:runwatcher',
         ],
     },
     test_suite='p2p.tests',
