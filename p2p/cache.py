@@ -1,4 +1,5 @@
-# pure python
+# (almost) pure python
+from copy import deepcopy
 
 
 class BaseCache(object):
@@ -59,9 +60,9 @@ class DictionaryCache(BaseCache):
         self.content_items_gets += 1
         try:
             if slug:
-                ret = self.content_items_by_slug[slug].copy()
+                ret = deepcopy(self.content_items_by_slug[slug])
             elif id:
-                ret = self.content_items_by_id[id].copy()
+                ret = deepcopy(self.content_items_by_id[id])
             else:
                 raise TypeError("get_content_item() takes either a slug or id keyword argument")
             self.content_items_hits += 1
@@ -70,7 +71,7 @@ class DictionaryCache(BaseCache):
             return None
 
     def save_content_item(self, content_item, query=None):
-        cache_copy = content_item.copy()
+        cache_copy = deepcopy(content_item)
         self.content_items_by_slug[content_item['slug']] = cache_copy
         self.content_items_by_id[content_item['id']] = cache_copy
 
@@ -78,9 +79,9 @@ class DictionaryCache(BaseCache):
         self.collections_gets += 1
         try:
             if slug:
-                ret = self.collections_by_slug[slug].copy()
+                ret = deepcopy(self.collections_by_slug[slug])
             elif id:
-                ret = self.collections_by_id[id].copy()
+                ret = deepcopy(self.collections_by_id[id])
             else:
                 raise TypeError("get_collection() takes either a slug or id keyword argument")
             self.collections_hits += 1
@@ -89,14 +90,14 @@ class DictionaryCache(BaseCache):
             return None
 
     def save_collection(self, collection, query=None):
-        cache_copy = collection.copy()
+        cache_copy = deepcopy(collection)
         self.collections_by_slug[collection['code']] = cache_copy
         self.collections_by_id[collection['id']] = cache_copy
 
     def get_collection_layout(self, slug, query=None):
         self.collection_layouts_gets += 1
         try:
-            ret = self.collection_layouts_by_slug[slug].copy()
+            ret = deepcopy(self.collection_layouts_by_slug[slug])
             ret['code'] = slug
             self.collection_layouts_hits += 1
             return ret
@@ -104,7 +105,7 @@ class DictionaryCache(BaseCache):
             return None
 
     def save_collection_layout(self, collection_layout, query=None):
-        cache_copy = collection_layout.copy()
+        cache_copy = deepcopy(collection_layout)
         self.collection_layouts_by_slug[collection_layout['code']] = cache_copy
         self.collection_layouts_by_id[collection_layout['id']] = cache_copy
 
