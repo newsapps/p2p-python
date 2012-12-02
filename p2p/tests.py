@@ -125,6 +125,11 @@ class TestP2P(unittest.TestCase):
 
         self.assertEqual(type(userinfo), dict)
 
+    def test_get_section(self):
+        data = self.p2p.get_section('/news/local/breaking')
+
+        pp.pprint(data)
+
 
 if __name__ == '__main__':
     unittest.main()

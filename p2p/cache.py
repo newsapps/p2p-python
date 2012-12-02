@@ -22,6 +22,10 @@ class BaseCache(object):
     collection_layouts_by_slug = dict()
     collection_layouts_by_id = dict()
 
+    sections_hits = 0
+    sections_gets = 0
+    sections_by_path = dict()
+
     def get_content_item(self, slug=None, id=None, query=None):
         raise NotImplementedError()
 
@@ -40,6 +44,12 @@ class BaseCache(object):
     def save_collection_layout(self, collection_layout, query=None):
         raise NotImplementedError()
 
+    def get_section(self, path=None):
+        raise NotImplementedError()
+
+    def save_section(self, section, path=None):
+        raise NotImplementedError()
+
     def get_stats(self):
         return {
             "content_item_gets": self.content_items_gets,
@@ -48,6 +58,8 @@ class BaseCache(object):
             "collections_hits": self.collections_hits,
             "collection_layouts_gets": self.collection_layouts_gets,
             "collection_layouts_hits": self.collection_layouts_hits,
+            "sections_gets": self.sections_gets,
+            "sections_hits": self.sections_hits,
         }
 
 
@@ -133,6 +145,11 @@ class NoCache(BaseCache):
     def save_collection_layout(self, collection_layout, query=None):
         pass
 
+    def get_section(self, path=None):
+        pass
+
+    def save_section(self, section, path=None):
+        pass
 
 try:
     from django.core.cache import cache

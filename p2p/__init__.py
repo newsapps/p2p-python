@@ -370,6 +370,24 @@ class P2P(object):
 
         return collection_layout
 
+    def get_section(self, path, force_update=False):
+        query = {
+            'section_path': path,
+            'product_affiliate_code': 'chinews'
+        }
+        if force_update:
+            data = self.get('/sections/show_collections.json', query)
+            section = data
+            self.cache.save_section(section, path=path)
+        else:
+            section = self.cache.get_section(path)
+            if section is None:
+                data = self.get('/sections/show_collections.json', query)
+                section = data
+                self.cache.save_section(section, path=path)
+
+        return section
+
     # Utilities
     def http_headers(self, content_type=None):
         h = {
