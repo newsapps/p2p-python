@@ -101,6 +101,15 @@ class TestP2P(unittest.TestCase):
         for k in self.content_item_keys:
             self.assertIn(k, data['items'][0]['content_item'].keys())
 
+    def test_fancy_content_item(self):
+        data = self.p2p.get_fancy_content_item(
+            self.content_item_slug)
+
+        for k in ('title', 'id', 'slug'):
+            self.assertIn(k, data['related_items'][0]['content_item'])
+
+        #pp.pprint(data)
+
     @unittest.skip("Uhhh... not committing my password")
     def test_auth(self):
         self.username = ''
@@ -128,7 +137,7 @@ class TestP2P(unittest.TestCase):
     def test_get_section(self):
         data = self.p2p.get_section('/news/local/breaking')
 
-        pp.pprint(data)
+        #pp.pprint(data)
 
 
 if __name__ == '__main__':

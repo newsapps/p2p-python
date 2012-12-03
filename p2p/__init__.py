@@ -12,6 +12,7 @@ import time
 import sys
 import math
 from datetime import datetime
+from copy import deepcopy
 
 from cache import NoCache
 
@@ -369,6 +370,36 @@ class P2P(object):
                     break
 
         return collection_layout
+
+    def get_fancy_content_item(self, slug, query=None,
+                               related_items_query=None,
+                               force_update=False):
+        if query is None:
+            query = deepcopy(self.default_content_item_query)
+            query['include'].append('related_items')
+
+        if related_items_query is None:
+            related_items_query = self.default_content_item_query
+
+        content_item = self.get_content_item(
+            slug, query, force_update=force_update)
+
+        # We have our content item, now loop through the related
+        # items, build a list of content item ids, and retrieve them all
+        ids = [item_stub['relatedcontentitem_id']
+               for item_stub in content_item['related_items']]
+
+        related_items = self.get_multi_content_items(
+            ids, related_items_query, force_update=force_update)
+
+        # now that we've retrieved all the related items, embed them into
+        # the original content item dictionary to make it fancy
+        for item_stub in content_item['related_items']:
+            for item in related_items:
+                if item_stub['relatedcontentitem_id'] == item['id']:
+                    item_stub['content_item'] = item
+
+        return content_item
 
     def get_section(self, path, force_update=False):
         query = {
