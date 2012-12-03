@@ -1,11 +1,7 @@
 """
-
-BUGGY, DO NOT USE!!!!
----------------------
-
 P2P Notification Listener
 -------------------------
-Connect to Tribune's RabbitMQ server to recieve notifications when
+Connect to Tribune's RabbitMQ server to receive notifications when
 content items or collections get added, updated or deleted.
 
 You need to be on Tribune's network to connect to the message server.
@@ -45,7 +41,7 @@ pp = pprint.PrettyPrinter(indent=4)
 
 class Listener(ConsumerMixin):
 
-    def __init__(self, connection, name, callback, product_code):
+    def __init__(self, connection, name, callback, product_code=None):
         """
         Setup connection, setup queues, and bind them to the exchange
         """
@@ -53,17 +49,25 @@ class Listener(ConsumerMixin):
         self.callback = callback
         self.product_affiliate_code = product_code
         self.exchange = Exchange('updated_content')
+
+        if self.product_affiliate_code:
+            ci_key = 'update.content_item.%s.#' % self.product_affiliate_code
+            c_key = 'update.collection.%s.#' % self.product_affiliate_code
+        else:
+            ci_key = 'update.content_item.#'
+            c_key = 'update.collection.#'
+
         self.queues = [
             Queue(name + '_content_items',
                   exchange=self.exchange,
-                  routing_key='update.content_item.%s' % self.product_affiliate_code,
+                  routing_key=ci_key,
                   channel=self.connection,
                   auto_delete=True),
             Queue(name + '_collections',
                   exchange=self.exchange,
-                  routing_key='update.collection.%s' % self.product_affiliate_code,
+                  routing_key=c_key,
                   channel=self.connection,
-                  auto_delete=True),
+                  auto_delete=True)
         ]
 
         for queue in self.queues:
@@ -85,11 +89,13 @@ class Listener(ConsumerMixin):
         """
         Here we actually do interesting things
         """
-        self.callback(json.loads(body))
+        data = json.loads(body)
+        self.callback(data)
+
         message.ack()
 
 
-def start_listening(name, amqp_url=None, callback=None, product_code=None):
+def start_listening(name, callback, amqp_url=None, product_code=None):
     """
     Connect to the messaging server and listen for notifications. Takes
     the URL of the server to connect to and a function to call for every
