@@ -118,7 +118,6 @@ class P2P(object):
                 "product_affiliate_code": "chinews",
                 "source_code": "chicagotribune",
                 "content_item_state_code": "live",
-                "body": "",
             }
         else:
             self.content_item_defaults = content_item_defaults
