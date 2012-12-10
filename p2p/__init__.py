@@ -437,9 +437,9 @@ class P2P(object):
             headers=self.http_headers(),
             config=self.config['REQUESTS_CONFIG'],
             verify=False)
-        if not resp.ok:
+        if resp.status_code >= 500:
             resp.raise_for_status()
-        return self.parse_response(json.loads(resp.content))
+        return self.parse_response(resp.json)
 
     def post_json(self, url, data):
         resp = requests.post(
@@ -448,9 +448,9 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             config=self.config['REQUESTS_CONFIG'],
             verify=False)
-        if not resp.ok:
+        if resp.status_code >= 500:
             resp.raise_for_status()
-        return self.parse_response(json.loads(resp.content))
+        return self.parse_response(resp.json)
 
     def put_json(self, url, data):
         resp = requests.put(
@@ -459,9 +459,9 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             config=self.config['REQUESTS_CONFIG'],
             verify=False)
-        if not resp.ok:
+        if resp.status_code >= 500:
             resp.raise_for_status()
-        return self.parse_response(json.loads(resp.content))
+        return self.parse_response(resp.json)
 
     @staticmethod
     def slugify(value):
