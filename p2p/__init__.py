@@ -101,13 +101,14 @@ class P2P(object):
             'P2P_AUTH_TOKEN': auth_token,
         }
         self.cache = cache
+        self.debug = debug
 
         if default_content_item_query is None:
             self.default_content_item_query = {'include': ['web_url']}
         else:
             self.default_content_item_query = default_content_item_query
 
-        if debug:
+        if self.debug:
             self.config['REQUESTS_CONFIG'] = {'verbose': sys.stderr}
         else:
             self.config['REQUESTS_CONFIG'] = {}
@@ -436,7 +437,9 @@ class P2P(object):
             headers=self.http_headers(),
             config=self.config['REQUESTS_CONFIG'],
             verify=False)
-        if resp.status_code >= 500:
+        if self.debug:
+            log.debug('HEADERS: %s' % self.http_headers())
+        if not resp.ok:
             resp.raise_for_status()
         return self.parse_response(resp.json)
 
@@ -447,7 +450,10 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             config=self.config['REQUESTS_CONFIG'],
             verify=False)
-        if resp.status_code >= 500:
+        if self.debug:
+            log.debug('HEADERS: %s' % self.http_headers())
+            log.debug('PAYLOAD: %s' % json.dumps(data))
+        if not resp.ok:
             resp.raise_for_status()
         return self.parse_response(resp.json)
 
@@ -458,7 +464,10 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             config=self.config['REQUESTS_CONFIG'],
             verify=False)
-        if resp.status_code >= 500:
+        if self.debug:
+            log.debug('HEADERS: %s' % self.http_headers())
+            log.debug('PAYLOAD: %s' % json.dumps(data))
+        if not resp.ok:
             resp.raise_for_status()
         return self.parse_response(resp.json)
 
