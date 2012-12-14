@@ -299,42 +299,59 @@ class P2P(object):
         resp = self.get("/content_items/search.json", params)
         return resp
 
-    def get_collection(self, slug, query=None, force_update=False):
+    def get_collection(self, code, query=None, force_update=False):
         if force_update:
-            data = self.get('/collections/%s.json' % slug, query)
+            data = self.get('/collections/%s.json' % code, query)
             collection = data['collection']
             self.cache.save_collection(collection, query=query)
         else:
-            collection = self.cache.get_collection(slug, query=query)
+            collection = self.cache.get_collection(code, query=query)
             if collection is None:
-                data = self.get('/collections/%s.json' % slug, query)
+                data = self.get('/collections/%s.json' % code, query)
                 collection = data['collection']
                 self.cache.save_collection(collection, query=query)
 
         return collection
 
-    def get_collection_layout(self, slug, query=None, force_update=False):
+    def push_into_collection(self, code, content_item_slugs):
+        """
+        Push a list of content item slugs onto the top of a collection
+        """
+        return self.put_json(
+            '/collections/prepend.json?id=%s' % code,
+            {'items': content_item_slugs})
+
+    def suppress_in_collection(self, code, content_item_slugs):
+        """
+        Suppress a list of slugs in the specified collection
+        TODO: This fails, need more documentation from tech
+        """
+        return self.put_json(
+            '/collections/suppress.json?id=%s' % code,
+            {'items': [{'slug': slug} for slug in content_item_slugs]})
+
+    def get_collection_layout(self, code, query=None, force_update=False):
         if not query:
             query = {'include': 'items'}
 
         if force_update:
-            resp = self.get('/current_collections/%s.json' % slug, query)
+            resp = self.get('/current_collections/%s.json' % code, query)
             collection_layout = resp['collection_layout']
-            collection_layout['code'] = slug  # response is missing this
+            collection_layout['code'] = code  # response is missing this
             self.cache.save_collection_layout(collection_layout, query=query)
         else:
             collection_layout = self.cache.get_collection_layout(
-                slug, query=query)
+                code, query=query)
             if collection_layout is None:
-                resp = self.get('/current_collections/%s.json' % slug, query)
+                resp = self.get('/current_collections/%s.json' % code, query)
                 collection_layout = resp['collection_layout']
-                collection_layout['code'] = slug  # response is missing this
+                collection_layout['code'] = code  # response is missing this
                 self.cache.save_collection_layout(
                     collection_layout, query=query)
 
         return collection_layout
 
-    def get_fancy_collection(self, slug, with_collection=False,
+    def get_fancy_collection(self, code, with_collection=False,
                              limit_items=25, content_item_query=None,
                              force_update=False):
         """
@@ -344,10 +361,10 @@ class P2P(object):
         on each layout item.
         """
         collection_layout = self.get_collection_layout(
-            slug, force_update=force_update)
+            code, force_update=force_update)
         if with_collection:
             # Do we want more detailed data about the collection?
-            collection = self.get_collection(slug, force_update=force_update)
+            collection = self.get_collection(code, force_update=force_update)
 
             collection_layout['collection'] = collection
 
