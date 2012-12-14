@@ -321,14 +321,16 @@ class P2P(object):
             '/collections/prepend.json?id=%s' % code,
             {'items': content_item_slugs})
 
-    def suppress_in_collection(self, code, content_item_slugs):
+    def suppress_in_collection(
+            self, code, content_item_slugs, affiliates=['chinews']):
         """
         Suppress a list of slugs in the specified collection
-        TODO: This fails, need more documentation from tech
         """
         return self.put_json(
             '/collections/suppress.json?id=%s' % code,
-            {'items': [{'slug': slug} for slug in content_item_slugs]})
+            {'items': [{
+                'slug': slug, 'affiliates': affiliates
+            } for slug in content_item_slugs]})
 
     def get_collection_layout(self, code, query=None, force_update=False):
         if not query:
