@@ -439,8 +439,10 @@ class P2P(object):
             verify=False)
         if self.debug:
             log.debug('HEADERS: %s' % self.http_headers())
-        if not resp.ok:
+        if resp.status_code >= 500:
             resp.raise_for_status()
+        elif resp.status_code >= 400:
+            raise P2PException(resp.content, resp.json)
         return self.parse_response(resp.json)
 
     def post_json(self, url, data):
@@ -453,8 +455,10 @@ class P2P(object):
         if self.debug:
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('PAYLOAD: %s' % json.dumps(data))
-        if not resp.ok:
+        if resp.status_code >= 500:
             resp.raise_for_status()
+        elif resp.status_code >= 400:
+            raise P2PException(resp.content, resp.json)
         return self.parse_response(resp.json)
 
     def put_json(self, url, data):
@@ -467,8 +471,10 @@ class P2P(object):
         if self.debug:
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('PAYLOAD: %s' % json.dumps(data))
-        if not resp.ok:
+        if resp.status_code >= 500:
             resp.raise_for_status()
+        elif resp.status_code >= 400:
+            raise P2PException(resp.content, resp.json)
         return self.parse_response(resp.json)
 
     @staticmethod
