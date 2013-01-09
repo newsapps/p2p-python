@@ -108,11 +108,6 @@ class P2P(object):
         else:
             self.default_content_item_query = default_content_item_query
 
-        if self.debug:
-            self.config['REQUESTS_CONFIG'] = {'verbose': sys.stderr}
-        else:
-            self.config['REQUESTS_CONFIG'] = {}
-
         if content_item_defaults is None:
             self.content_item_defaults = {
                 "content_item_type_code": "blurb",
@@ -454,7 +449,6 @@ class P2P(object):
         resp = requests.get(
             self.config['P2P_API_ROOT'] + url,
             headers=self.http_headers(),
-            config=self.config['REQUESTS_CONFIG'],
             verify=False)
         if self.debug:
             log.debug('HEADERS: %s' % self.http_headers())
@@ -469,7 +463,6 @@ class P2P(object):
             self.config['P2P_API_ROOT'] + url,
             data=json.dumps(data),
             headers=self.http_headers('application/json'),
-            config=self.config['REQUESTS_CONFIG'],
             verify=False)
         if self.debug:
             log.debug('HEADERS: %s' % self.http_headers())
@@ -485,7 +478,6 @@ class P2P(object):
             self.config['P2P_API_ROOT'] + url,
             data=json.dumps(data),
             headers=self.http_headers('application/json'),
-            config=self.config['REQUESTS_CONFIG'],
             verify=False)
         if self.debug:
             log.debug('HEADERS: %s' % self.http_headers())
