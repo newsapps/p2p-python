@@ -8,7 +8,7 @@ setup(
 
     packages=find_packages(),
     install_requires=["python-dateutil",
-                      "requests==0.13.2", #this needs to be version 0.13.2
+                      "requests", 
                       "iso8601",
                       "clint",
                       "kombu", ],
