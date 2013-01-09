@@ -455,8 +455,8 @@ class P2P(object):
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
-            raise P2PException(resp.content, resp.json)
-        return self.parse_response(resp.json)
+            raise P2PException(resp.content, resp.json())
+        return self.parse_response(resp.json())
 
     def post_json(self, url, data):
         resp = requests.post(
@@ -470,8 +470,8 @@ class P2P(object):
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
-            raise P2PException(resp.content, resp.json)
-        return self.parse_response(resp.json)
+            raise P2PException(resp.content, resp.json())
+        return self.parse_response(resp.json())
 
     def put_json(self, url, data):
         resp = requests.put(
@@ -485,8 +485,8 @@ class P2P(object):
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
-            raise P2PException(resp.content, resp.json)
-        return self.parse_response(resp.json)
+            raise P2PException(resp.content, resp.json())
+        return self.parse_response(resp.json())
 
     @staticmethod
     def slugify(value):
