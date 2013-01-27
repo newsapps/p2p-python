@@ -4,17 +4,13 @@ Python wrapper for the Content Services API
 '''
 import requests
 import json
-import iso8601
-from iso8601.iso8601 import ISO8601_REGEX
-from dateutil.parser import parse
-import re
-import time
-import sys
+import os
 import math
 from datetime import datetime
 from copy import deepcopy
 
 from cache import NoCache
+import utils
 
 import logging
 log = logging.getLogger(__name__)
@@ -46,7 +42,7 @@ def get_connection():
         return P2P(
             url=os.environ['P2P_API_URL'],
             auth_token=os.environ['P2P_API_KEY'],
-            debug=os.environ['P2P_API_DEBUG'] if 'P2P_API_DEBUG' in os.environ else False
+            debug=os.environ.get('P2P_API_DEBUG', False)
         )
 
     # Try getting settings from Django
@@ -60,13 +56,8 @@ def get_connection():
     except ImportError, e:
         pass
 
-    raise P2PException("No connection settings available. Please put settings in your environment variables or your Django config")
-
-
-_slugify_strip_re = re.compile(r'[^\w\s./-]')
-_slugify_hyphenate_re = re.compile(r'[-./\s]+')
-_iso8601_full_date = re.compile(r'^\d{4}-\d{2}-\d{2}.\d{2}:\d{2}.*$')
-_iso8601_part_date = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+    raise P2PException("No connection settings available. Please put settings "
+                       "in your environment variables or your Django config")
 
 
 # API calls
@@ -168,14 +159,14 @@ class P2P(object):
             if force_update:
                 items.append({
                     "id": id,
-                    "if_modified_since": self.formatdate(if_modified_since),
+                    "if_modified_since": utils.formatdate(if_modified_since),
                 })
             else:
                 ci = self.cache.get_content_item(id=id, query=query)
                 if ci is None:
                     items.append({
                         "id": id,
-                        "if_modified_since": self.formatdate(
+                        "if_modified_since": utils.formatdate(
                             if_modified_since),
                     })
                 else:
@@ -190,7 +181,8 @@ class P2P(object):
                 num_items = len(ids)
 
                 # how many batches of max_items do we have?
-                num_batches = int(math.ceil(float(num_items) / float(max_items)))
+                num_batches = int(
+                    math.ceil(float(num_items) / float(max_items)))
 
                 # make a list of indices where we should break the item list
                 index_breaks = [j * max_items for j in range(num_batches)]
@@ -444,7 +436,7 @@ class P2P(object):
 
     def get(self, url, query=None):
         if query is not None:
-            url += '?' + self.dict_to_qs(query)
+            url += '?' + utils.dict_to_qs(query)
 
         resp = requests.get(
             self.config['P2P_API_ROOT'] + url,
@@ -460,7 +452,7 @@ class P2P(object):
             except ValueError:
                 data = resp.text
             raise P2PException(resp.content, data)
-        return self.parse_response(resp.json())
+        return utils.parse_response(resp.json())
 
     def post_json(self, url, data):
         resp = requests.post(
@@ -475,7 +467,7 @@ class P2P(object):
             resp.raise_for_status()
         elif resp.status_code >= 400:
             raise P2PException(resp.content, resp.json())
-        return self.parse_response(resp.json())
+        return utils.parse_response(resp.json())
 
     def put_json(self, url, data):
         resp = requests.put(
@@ -490,86 +482,7 @@ class P2P(object):
             resp.raise_for_status()
         elif resp.status_code >= 400:
             raise P2PException(resp.content, resp.json())
-        return self.parse_response(resp.json())
-
-    @staticmethod
-    def slugify(value):
-        """
-        Normalizes string, converts to lowercase, removes non-alpha characters,
-        and converts spaces to hyphens.
-
-        From Django's "django/template/defaultfilters.py".
-        """
-        import unicodedata
-        if not isinstance(value, unicode):
-            value = unicode(value)
-        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-        value = unicode(_slugify_strip_re.sub('', value).strip().lower())
-        return _slugify_hyphenate_re.sub('-', value)
-
-    @staticmethod
-    def dict_to_qs(dictionary):
-        """
-        Takes a dictionary of query parameters and returns a query string
-        that the p2p API will handle.
-        """
-        qs = list()
-
-        for k, v in dictionary.items():
-            if isinstance(v, dict):
-                for k2, v2 in v.items():
-                    if type(v2) in (str, unicode, int, float, bool):
-                        qs.append("%s[%s]=%s" % (k, k2, v2))
-                    elif type(v2) in (list, tuple):
-                        for v3 in v2:
-                            qs.append("%s[%s][]=%s" % (k, k2, v3))
-                    else:
-                        raise TypeError
-            elif type(v) in (str, unicode, int, float, bool):
-                qs.append("%s=%s" % (k, v))
-            elif type(v) in (list, tuple):
-                for v2 in v:
-                    qs.append("%s[]=%s" % (k, v2))
-            else:
-                raise TypeError
-
-        return "&".join(qs)
-
-    @staticmethod
-    def parse_response(resp):
-        """
-        Recurse through a dictionary from an API call, and fix weird values,
-        convert date strings to objects, etc.
-        """
-        if type(resp) in (str, unicode):
-            if resp in ("null", "Null"):
-                # Null value as a string
-                return None
-            elif (_iso8601_full_date.match(resp) is not None
-                    or _iso8601_part_date.match(resp) is not None):
-                # Date as a string
-                return P2P.parsedate(resp)
-        elif type(resp) is dict:
-            # would use list comprehension, but that makes unnecessary copies
-            for k, v in resp.items():
-                resp[k] = P2P.parse_response(v)
-        elif type(resp) is list:
-            # would use list comprehension, but that makes unnecessary copies
-            for i in range(len(resp)):
-                resp[i] = P2P.parse_response(resp[i])
-
-        return resp
-
-    @staticmethod
-    def formatdate(d=datetime.utcnow()):
-        return d.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-    @staticmethod
-    def parsedate(d):
-        if _iso8601_full_date.match(d) is not None:
-            return iso8601.parse_date(d)
-        else:
-            return parse(d)
+        return utils.parse_response(resp.json())
 
 
 class P2PException(Exception):

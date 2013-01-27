@@ -1,5 +1,6 @@
 # (almost) pure python
 from copy import deepcopy
+import utils
 
 
 class BaseCache(object):
@@ -154,7 +155,6 @@ class NoCache(BaseCache):
 
 try:
     from django.core.cache import cache
-    from __init__ import P2P
 
     class DjangoCache(BaseCache):
         """
@@ -245,7 +245,7 @@ try:
             if query is None:
                 return ''
 
-            return P2P.dict_to_qs(query)
+            return utils.dict_to_qs(query)
 
 
 except ImportError, e:
@@ -253,7 +253,6 @@ except ImportError, e:
 
 try:
     import redis
-    from __init__ import P2P
 
     class RedisCache(BaseCache):
         """
@@ -345,7 +344,7 @@ try:
             if query is None:
                 return ''
 
-            return P2P.dict_to_qs(query)
+            return utils.dict_to_qs(query)
 
 
 except ImportError, e:

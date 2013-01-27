@@ -2,8 +2,10 @@
 import unittest
 
 from __init__ import get_connection
-from cache import DictionaryCache
 from auth import authenticate, P2PAuthError
+import cache
+import inspect
+import sys
 
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
@@ -77,13 +79,23 @@ class TestP2P(unittest.TestCase):
             self.assertIn(k, data[0].keys())
 
     def test_cache(self):
-        self.p2p.cache = DictionaryCache()
-        content_item_ids = [58253183, 56809651, 56810874, 56811192, 58253247]
-        data = self.p2p.get_multi_content_items(ids=content_item_ids)
-        data = self.p2p.get_content_item(self.content_item_slug)
-        stats = self.p2p.cache.get_stats()
-        self.assertEqual(stats['content_item_gets'], 6)
-        self.assertEqual(stats['content_item_hits'], 1)
+        # Get a list of availabe classes to test
+        test_backends = ('DictionaryCache', 'DjangoCache', 'RedisCache')
+        cache_backends = list()
+        for backend in test_backends:
+            if hasattr(cache, backend):
+                cache_backends.append(getattr(cache, backend))
+
+        content_item_ids = [
+            58253183, 56809651, 56810874, 56811192, 58253247]
+
+        for cls in cache_backends:
+            self.p2p.cache = cls()
+            data = self.p2p.get_multi_content_items(ids=content_item_ids)
+            data = self.p2p.get_content_item(self.content_item_slug)
+            stats = self.p2p.cache.get_stats()
+            self.assertEqual(stats['content_item_gets'], 6)
+            self.assertEqual(stats['content_item_hits'], 1)
 
     def test_fancy_collection(self):
         data = self.p2p.get_fancy_collection(
