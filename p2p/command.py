@@ -125,6 +125,6 @@ def runwatcher():
 
     start_listening(
         'watcher',
-        args.url,
         print_message,
+        args.url,
         'chinews')
