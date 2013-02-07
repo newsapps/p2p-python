@@ -4,14 +4,15 @@ from setuptools import setup, find_packages
 
 setup(
     name="p2p",
-    version="1.0",
+    version="1.1",
 
     packages=find_packages(),
     install_requires=["python-dateutil",
                       "requests", 
                       "iso8601",
-                      "clint",
-                      "kombu", ],
+                      #"clint", #optional
+                      #"kombu", #optional
+                    ],
     entry_points={
         'console_scripts': [
             'p2pci = p2p.command:content_item_cli',
