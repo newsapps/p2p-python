@@ -443,6 +443,7 @@ class P2P(object):
             headers=self.http_headers(),
             verify=False)
         if self.debug:
+            log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
         if resp.status_code >= 500:
             resp.raise_for_status()
@@ -461,6 +462,7 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             verify=False)
         if self.debug:
+            log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('PAYLOAD: %s' % json.dumps(data))
         if resp.status_code >= 500:
@@ -476,6 +478,7 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             verify=False)
         if self.debug:
+            log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('PAYLOAD: %s' % json.dumps(data))
         if resp.status_code >= 500:
