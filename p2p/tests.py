@@ -122,6 +122,21 @@ class TestP2P(unittest.TestCase):
 
         #pp.pprint(data)
 
+    def test_image_services(self):
+        data = self.p2p.get_thumb_for_slug(self.content_item_slug)
+
+        self.assertEqual(
+            data, {
+                u'crops': [],
+                u'height': 105,
+                u'id': u'turbine/chi-na-lorem-a',
+                u'namespace': u'turbine',
+                u'size': 6138,
+                u'slug': u'chi-na-lorem-a',
+                u'url': u'/img-5124e228/turbine/chi-na-lorem-a',
+                u'width': 187
+            })
+
     @unittest.skip("Uhhh... not committing my password")
     def test_auth(self):
         self.username = ''
