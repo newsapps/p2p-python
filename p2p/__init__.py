@@ -25,13 +25,19 @@ def get_connection():
 
         export P2P_API_KEY=your_p2p_api_key
         export P2P_API_URL=url_of_p2p_endpoint
+
+        # Optional
         export P2P_API_DEBUG=plz  # display an http log
+        export P2P_IMAGE_SERVICES_URL=url_of_image_services_endpoint
 
     Or those same settings from your Django settings::
 
         P2P_API_KEY = your_p2p_api_key
         P2P_API_URL = url_of_p2p_endpoint
         P2P_API_DEBUG = plz  # display an http log
+
+        # Optional
+        P2P_IMAGE_SERVICES_URL = url_of_image_services_endpoint
 
     If you need to pass in your config, just create a new p2p object.
     """
@@ -42,7 +48,8 @@ def get_connection():
         return P2P(
             url=os.environ['P2P_API_URL'],
             auth_token=os.environ['P2P_API_KEY'],
-            debug=os.environ.get('P2P_API_DEBUG', False)
+            debug=os.environ.get('P2P_API_DEBUG', False),
+            image_services_url=os.environ.get('P2P_IMAGE_SERVICES_URL', None)
         )
 
     # Try getting settings from Django
@@ -51,7 +58,9 @@ def get_connection():
         return P2P(
             url=settings.P2P_API_URL,
             auth_token=settings.P2P_API_KEY,
-            debug=settings.DEBUG
+            debug=settings.DEBUG,
+            image_services_url=getattr(
+                settings, 'P2P_IMAGE_SERVICES_URL', None)
         )
     except ImportError, e:
         pass
@@ -84,12 +93,15 @@ class P2P(object):
                   cache=DjangoCache())
     """
 
-    def __init__(self, url, auth_token, debug=False, cache=NoCache(),
+    def __init__(self, url, auth_token,
+                 debug=False, cache=NoCache(),
+                 image_services_url=None,
                  default_content_item_query=None,
                  content_item_defaults=None):
         self.config = {
             'P2P_API_ROOT': url,
             'P2P_AUTH_TOKEN': auth_token,
+            'IMAGE_SERVICES_URL': image_services_url,
         }
         self.cache = cache
         self.debug = debug
@@ -443,6 +455,20 @@ class P2P(object):
                 self.cache.save_section(section, path=path)
 
         return section
+
+    def get_thumb_for_slug(self, slug):
+        url = "%s/photos/turbine/%s.json" % (
+            self.config['IMAGE_SERVICES_URL'], slug)
+
+        resp = requests.get(
+            url,
+            headers=self.http_headers(),
+            verify=False)
+
+        if resp.ok:
+            return resp.json()
+        else:
+            return None
 
     # Utilities
     def http_headers(self, content_type=None):

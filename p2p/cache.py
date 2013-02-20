@@ -253,6 +253,7 @@ except ImportError, e:
 
 try:
     import redis
+    import pickle
 
     class RedisCache(BaseCache):
         """
@@ -282,18 +283,19 @@ try:
             ret = self.r.get(key)
             if ret:
                 self.content_items_hits += 1
+                return pickle.loads(ret)
             return ret
 
         def save_content_item(self, content_item, query=None):
             key = "_".join([self.prefix, 'content_item',
                             content_item['slug'],
                             self.query_to_key(query)])
-            self.r.set(key, content_item)
+            self.r.set(key, pickle.dumps(content_item))
 
             key = "_".join([self.prefix, 'content_item',
                             str(content_item['id']),
                             self.query_to_key(query)])
-            self.r.set(key, content_item)
+            self.r.set(key, pickle.dumps(content_item))
 
         def get_collection(self, slug=None, id=None, query=None):
             self.collections_gets += 1
@@ -310,18 +312,19 @@ try:
             ret = self.r.get(key)
             if ret:
                 self.collections_hits += 1
+                return pickle.loads(ret)
             return ret
 
         def save_collection(self, collection, query=None):
             key = "_".join([self.prefix, 'collection',
                             collection['code'],
                             self.query_to_key(query)])
-            self.r.set(key, collection)
+            self.r.set(key, pickle.dumps(collection))
 
             key = "_".join([self.prefix, 'collection',
                             str(collection['id']),
                             self.query_to_key(query)])
-            self.r.set(key, collection)
+            self.r.set(key, pickle.dumps(collection))
 
         def get_collection_layout(self, slug, query=None):
             self.collection_layouts_gets += 1
@@ -330,6 +333,7 @@ try:
                             slug, self.query_to_key(query)])
             ret = self.r.get(key)
             if ret:
+                ret = pickle.loads(ret)
                 ret['code'] = slug
                 self.collection_layouts_hits += 1
             return ret
@@ -338,7 +342,7 @@ try:
             key = "_".join([self.prefix, 'collection_layout',
                            collection_layout['code'],
                            self.query_to_key(query)])
-            self.r.set(key, collection_layout)
+            self.r.set(key, pickle.dumps(collection_layout))
 
         def query_to_key(self, query):
             if query is None:
