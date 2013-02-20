@@ -503,7 +503,7 @@ class P2P(object):
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
-            raise P2PException(resp.content, resp.json())
+            raise P2PException(resp.content)
         return utils.parse_response(resp.json())
 
 
