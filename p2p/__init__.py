@@ -319,6 +319,25 @@ class P2P(object):
                 'slug': slug, 'affiliates': affiliates
             } for slug in content_item_slugs]})
 
+    def insert_position_in_collection(
+            self, code, slug, affiliates=['chinews']):
+        """
+        Suppress a list of slugs in the specified collection
+        """
+        return self.put_json(
+            '/collections/insert.json?id=%s' % code,
+            {'items': [{
+                'slug': slug, 'position': 1
+            }]})
+
+    def push_into_content_item(self, code, content_item_slugs):
+        """
+        Push a list of content item slugs onto the top of a collection
+        """
+        return self.put_json(
+            '/content_items/prepend.json?id=%s' % code,
+            {'items': content_item_slugs})
+
     def get_collection_layout(self, code, query=None, force_update=False):
         if not query:
             query = {'include': 'items'}
@@ -443,6 +462,7 @@ class P2P(object):
             headers=self.http_headers(),
             verify=False)
         if self.debug:
+            log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
         if resp.status_code >= 500:
             resp.raise_for_status()
@@ -461,6 +481,7 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             verify=False)
         if self.debug:
+            log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('PAYLOAD: %s' % json.dumps(data))
         if resp.status_code >= 500:
@@ -476,6 +497,7 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             verify=False)
         if self.debug:
+            log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('PAYLOAD: %s' % json.dumps(data))
         if resp.status_code >= 500:
