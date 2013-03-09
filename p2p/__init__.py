@@ -13,7 +13,7 @@ from cache import NoCache
 import utils
 
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger('p2p')
 
 
 def get_connection():
@@ -490,6 +490,8 @@ class P2P(object):
         if self.debug:
             log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
+            log.debug('STATUS: %s' % resp.status_code)
+            log.debug('RESPONSE_BODY: %s' % resp.content)
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
@@ -510,6 +512,8 @@ class P2P(object):
             log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('PAYLOAD: %s' % json.dumps(data))
+            log.debug('STATUS: %s' % resp.status_code)
+            log.debug('RESPONSE_BODY: %s' % resp.content)
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
@@ -526,6 +530,8 @@ class P2P(object):
             log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('PAYLOAD: %s' % json.dumps(data))
+            log.debug('STATUS: %s' % resp.status_code)
+            log.debug('RESPONSE_BODY: %s' % resp.content)
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:

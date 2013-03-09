@@ -16,6 +16,7 @@ class TestP2P(unittest.TestCase):
         self.content_item_slug = 'chi-na-lorem-a'
         self.collection_slug = 'chi_na_lorem'
         self.p2p = get_connection()
+        self.p2p.debug = True
         self.maxDiff = None
 
         self.content_item_keys = ('altheadline', 'expire_time',
@@ -168,5 +169,12 @@ class TestP2P(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    import logging
+    logging.basicConfig()
+    log = logging.getLogger()
+
+    # Show debug messages from p2p
+    # log.setLevel(0)
+
     unittest.main()
 
