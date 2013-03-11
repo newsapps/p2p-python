@@ -11,6 +11,8 @@ from copy import deepcopy
 
 from cache import NoCache
 import utils
+import time
+
 
 import logging
 log = logging.getLogger('p2p')
@@ -275,13 +277,10 @@ class P2P(object):
         create = False
         try:
             response = self.update_content_item(content_item)
-        except requests.exceptions.HTTPError, e:
-            if e.response.status_code == 404:
-                time.sleep(2)
-                response = self.create_content_item(content_item)
-                create = True
-            else:
-                raise e
+        except P2PException, e:
+            time.sleep(2)
+            response = self.create_content_item(content_item)
+            create = True
 
         return (create, response)
 
