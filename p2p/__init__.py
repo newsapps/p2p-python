@@ -511,6 +511,7 @@ class P2P(object):
             log.debug('PAYLOAD: %s' % json.dumps(data))
             log.debug('STATUS: %s' % resp.status_code)
             log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
@@ -529,6 +530,7 @@ class P2P(object):
             log.debug('PAYLOAD: %s' % json.dumps(data))
             log.debug('STATUS: %s' % resp.status_code)
             log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
