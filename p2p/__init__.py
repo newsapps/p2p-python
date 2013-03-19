@@ -44,16 +44,6 @@ def get_connection():
     If you need to pass in your config, just create a new p2p object.
     """
 
-    import os
-    # Try getting settings from environment variables
-    if 'P2P_API_KEY' in os.environ and 'P2P_API_URL' in os.environ:
-        return P2P(
-            url=os.environ['P2P_API_URL'],
-            auth_token=os.environ['P2P_API_KEY'],
-            debug=os.environ.get('P2P_API_DEBUG', False),
-            image_services_url=os.environ.get('P2P_IMAGE_SERVICES_URL', None)
-        )
-
     # Try getting settings from Django
     try:
         from django.conf import settings
@@ -65,7 +55,15 @@ def get_connection():
                 settings, 'P2P_IMAGE_SERVICES_URL', None)
         )
     except ImportError, e:
-        pass
+        import os
+        # Try getting settings from environment variables
+        if 'P2P_API_KEY' in os.environ and 'P2P_API_URL' in os.environ:
+            return P2P(
+                url=os.environ['P2P_API_URL'],
+                auth_token=os.environ['P2P_API_KEY'],
+                debug=os.environ.get('P2P_API_DEBUG', False),
+                image_services_url=os.environ.get('P2P_IMAGE_SERVICES_URL', None)
+            )
 
     raise P2PException("No connection settings available. Please put settings "
                        "in your environment variables or your Django config")
