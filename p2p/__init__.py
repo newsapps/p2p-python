@@ -263,6 +263,14 @@ class P2P(object):
         resp = self.post_json('/content_items.json', data)
         return resp
 
+    def delete_content_item(self, slug):
+        """
+        Delete the content item out of p2p
+        """
+        result = self.delete(
+            '/content_items/%s.json' % slug)
+        return True if "destroyed successfully" in result else False
+
     def create_or_update_content_item(self, content_item):
         """
         Attempts to update a content item, if it doesn't exist, attempts to
@@ -275,8 +283,7 @@ class P2P(object):
         create = False
         try:
             response = self.update_content_item(content_item)
-        except P2PException, e:
-            time.sleep(2)
+        except P2PException:
             response = self.create_content_item(content_item)
             create = True
 
@@ -454,6 +461,9 @@ class P2P(object):
         return section
 
     def get_thumb_for_slug(self, slug):
+        """
+        Get information on how to display images associated with this slug
+        """
         url = "%s/photos/turbine/%s.json" % (
             self.config['IMAGE_SERVICES_URL'], slug)
 
@@ -489,8 +499,11 @@ class P2P(object):
             log.debug('HEADERS: %s' % self.http_headers())
             log.debug('STATUS: %s' % resp.status_code)
             log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
             resp.raise_for_status()
+        elif resp.status_code == 404:
+            raise P2PNotFound(url)
         elif resp.status_code >= 400:
             try:
                 data = resp.json()
@@ -498,6 +511,30 @@ class P2P(object):
                 data = resp.text
             raise P2PException(resp.content, data)
         return utils.parse_response(resp.json())
+
+    def delete(self, url):
+        resp = requests.delete(
+            self.config['P2P_API_ROOT'] + url,
+            headers=self.http_headers(),
+            verify=False)
+        if self.debug:
+            log.debug('URL: %s' % url)
+            log.debug('HEADERS: %s' % self.http_headers())
+            log.debug('STATUS: %s' % resp.status_code)
+            log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
+        if resp.status_code >= 500:
+            resp.raise_for_status()
+        elif resp.status_code == 404:
+            raise P2PNotFound(url)
+        elif resp.status_code >= 400:
+            try:
+                data = resp.json()
+            except ValueError:
+                data = resp.text
+            raise P2PException(resp.content, data)
+        else:
+            return resp.content
 
     def post_json(self, url, data):
         resp = requests.post(
@@ -511,10 +548,13 @@ class P2P(object):
             log.debug('PAYLOAD: %s' % json.dumps(data))
             log.debug('STATUS: %s' % resp.status_code)
             log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
-            raise P2PException(resp.content, resp.json())
+            if u'{"slug":["has already been taken"]}' == resp.content:
+                raise P2PSlugTaken(data['content_item']['slug'])
+            raise P2PException(resp.content, resp.headers)
         return utils.parse_response(resp.json())
 
     def put_json(self, url, data):
@@ -525,16 +565,36 @@ class P2P(object):
             verify=False)
         if self.debug:
             log.debug('URL: %s' % url)
-            log.debug('HEADERS: %s' % self.http_headers())
+            log.debug('HEADERS: %s' % self.http_headers('application/json'))
             log.debug('PAYLOAD: %s' % json.dumps(data))
             log.debug('STATUS: %s' % resp.status_code)
             log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
+            print "500!"
+            if not self.debug:
+                print "not debug"
+                log.error('URL: %s' % url)
+                log.error('HEADERS: %s' % self.http_headers('application/json'))
+                log.error('PAYLOAD: %s' % json.dumps(data))
+                log.error('STATUS: %s' % resp.status_code)
+                log.error('RESPONSE_BODY: %s' % resp.content)
+                log.error('RESPONSE_HEADERS: %s' % resp.headers)
             resp.raise_for_status()
+        elif resp.status_code == 404:
+            raise P2PNotFound(url)
         elif resp.status_code >= 400:
-            raise P2PException(resp.content)
+            raise P2PException(resp.content, resp.headers)
         return utils.parse_response(resp.json())
 
 
 class P2PException(Exception):
+    pass
+
+
+class P2PSlugTaken(P2PException):
+    pass
+
+
+class P2PNotFound(P2PException):
     pass

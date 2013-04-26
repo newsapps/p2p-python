@@ -4,11 +4,11 @@ from setuptools import setup, find_packages
 
 setup(
     name="p2p",
-    version="1.2.1",
+    version="1.2.2",
 
     packages=find_packages(),
     install_requires=["python-dateutil",
-                      "requests", 
+                      "requests",
                       "iso8601",
                       #"clint", #optional
                       #"kombu", #optional
