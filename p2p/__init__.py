@@ -450,15 +450,52 @@ class P2P(object):
         if force_update:
             data = self.get('/sections/show_collections.json', query)
             section = data
-            self.cache.save_section(section, path=path)
+            self.cache.save_section(path, section)
         else:
             section = self.cache.get_section(path)
             if section is None:
                 data = self.get('/sections/show_collections.json', query)
                 section = data
-                self.cache.save_section(section, path=path)
+                self.cache.save_section(path, section)
 
         return section
+
+    def get_section_configs(self, path, force_update=False):
+        query = {
+            'section_path': path,
+            'product_affiliate_code': 'chinews'
+        }
+        if force_update:
+            data = self.get('/sections/show_configs.json', query)
+            section = data
+            self.cache.save_section_configs(path, section)
+        else:
+            section = self.cache.get_section_configs(path)
+            if section is None:
+                data = self.get('/sections/show_configs.json', query)
+                section = data
+                self.cache.save_section_configs(path, section)
+
+        return section
+
+    def get_fancy_section(self, path, force_update=False):
+        section = self.get_section(path, force_update)
+        config = self.get_section_configs(path, force_update)
+        collections = list()
+        collection_dupes = list()
+        for c in section['results']['module_collections']:
+            if c['code'] not in collection_dupes:
+                collection_dupes.append(c['code'])
+                collections.append({
+                    'collection_type_code': c['collection_type_code'],
+                    'name': c['name'],
+                    'collection': self.get_fancy_collection(c['code'])
+                })
+        fancy_section = config['results']['section_configs'][0]
+        fancy_section['collections'] = collections
+        fancy_section['path'] = path
+
+        return fancy_section
 
     def get_thumb_for_slug(self, slug):
         """

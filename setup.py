@@ -4,19 +4,16 @@ from setuptools import setup, find_packages
 
 setup(
     name="p2p",
-    version="1.2.2",
+    version="1.3.0",
 
     packages=find_packages(),
     install_requires=["python-dateutil",
                       "requests",
                       "iso8601",
-                      #"clint", #optional
-                      #"kombu", #optional
                     ],
     entry_points={
         'console_scripts': [
             'p2pci = p2p.command:content_item_cli',
-            'p2pwatcher = p2p.command:runwatcher',
         ],
     },
     test_suite='p2p.tests',

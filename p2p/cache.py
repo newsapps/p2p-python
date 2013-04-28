@@ -45,10 +45,16 @@ class BaseCache(object):
     def save_collection_layout(self, collection_layout, query=None):
         raise NotImplementedError()
 
-    def get_section(self, path=None):
+    def get_section(self, path):
         raise NotImplementedError()
 
-    def save_section(self, section, path=None):
+    def save_section(self, path, section):
+        raise NotImplementedError()
+
+    def get_section_configs(self, path):
+        raise NotImplementedError()
+
+    def save_section_configs(self, path, section):
         raise NotImplementedError()
 
     def get_stats(self):
@@ -146,10 +152,16 @@ class NoCache(BaseCache):
     def save_collection_layout(self, collection_layout, query=None):
         pass
 
-    def get_section(self, path=None):
+    def get_section(self, path):
         pass
 
-    def save_section(self, section, path=None):
+    def save_section(self, path, section):
+        pass
+
+    def get_section_configs(self, path):
+        pass
+
+    def save_section_configs(self, path, section):
         pass
 
 
@@ -343,6 +355,26 @@ try:
                            collection_layout['code'],
                            self.query_to_key(query)])
             self.r.set(key, pickle.dumps(collection_layout))
+
+        def get_section(self, path):
+            key = "_".join([self.prefix, 'section', path])
+
+            ret = self.r.get(key)
+            return pickle.loads(ret) if ret else None
+
+        def save_section(self, path, section):
+            key = "_".join([self.prefix, 'section', path])
+            self.r.set(key, pickle.dumps(section))
+
+        def get_section_configs(self, path):
+            key = "_".join([self.prefix, 'section_configs', path])
+
+            ret = self.r.get(key)
+            return pickle.loads(ret) if ret else None
+
+        def save_section_configs(self, path, section):
+            key = "_".join([self.prefix, 'section_configs', path])
+            self.r.set(key, pickle.dumps(section))
 
         def query_to_key(self, query):
             if query is None:
