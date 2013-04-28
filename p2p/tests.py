@@ -103,10 +103,10 @@ class TestP2P(unittest.TestCase):
         for k in self.content_item_keys:
             self.assertIn(k, data[0].keys())
 
-    @unittest.skip('@TODO: test redis cache')
+    # TODO: test redis cache
     def test_cache(self):
         # Get a list of availabe classes to test
-        test_backends = ('DictionaryCache', 'DjangoCache', 'RedisCache')
+        test_backends = ('DictionaryCache', 'DjangoCache')
         cache_backends = list()
         for backend in test_backends:
             if hasattr(cache, backend):
