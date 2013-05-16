@@ -608,9 +608,7 @@ class P2P(object):
             log.debug('RESPONSE_BODY: %s' % resp.content)
             log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
-            print "500!"
             if not self.debug:
-                print "not debug"
                 log.error('URL: %s' % url)
                 log.error('HEADERS: %s' % self.http_headers('application/json'))
                 log.error('PAYLOAD: %s' % json.dumps(data))
