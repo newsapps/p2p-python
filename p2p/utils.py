@@ -78,6 +78,25 @@ def parse_response(resp):
     return resp
 
 
+def parse_request(data):
+    """
+    Recurse through a dictionary meant for a request payload, make json- and
+    p2p-friendly.
+    """
+    if type(data) is datetime:
+        return formatdate(data)
+    elif type(data) is dict:
+        # would use list comprehension, but that makes unnecessary copies
+        for k, v in data.items():
+            data[k] = parse_request(v)
+    elif type(data) is list:
+        # would use list comprehension, but that makes unnecessary copies
+        for i in range(len(data)):
+            data[i] = parse_request(data[i])
+
+    return data
+
+
 def formatdate(d=datetime.utcnow()):
     return d.strftime('%Y-%m-%dT%H:%M:%SZ')
 

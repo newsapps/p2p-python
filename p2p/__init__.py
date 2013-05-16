@@ -574,15 +574,16 @@ class P2P(object):
             return resp.content
 
     def post_json(self, url, data):
+        payload = json.dumps(utils.parse_request(data))
         resp = requests.post(
             self.config['P2P_API_ROOT'] + url,
-            data=json.dumps(data),
+            data=payload,
             headers=self.http_headers('application/json'),
             verify=False)
         if self.debug:
             log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
-            log.debug('PAYLOAD: %s' % json.dumps(data))
+            log.debug('PAYLOAD: %s' % payload)
             log.debug('STATUS: %s' % resp.status_code)
             log.debug('RESPONSE_BODY: %s' % resp.content)
             log.debug('RESPONSE_HEADERS: %s' % resp.headers)
@@ -595,15 +596,16 @@ class P2P(object):
         return utils.parse_response(resp.json())
 
     def put_json(self, url, data):
+        payload = json.dumps(utils.parse_request(data))
         resp = requests.put(
             self.config['P2P_API_ROOT'] + url,
-            data=json.dumps(data),
+            data=payload,
             headers=self.http_headers('application/json'),
             verify=False)
         if self.debug:
             log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers('application/json'))
-            log.debug('PAYLOAD: %s' % json.dumps(data))
+            log.debug('PAYLOAD: %s' % payload)
             log.debug('STATUS: %s' % resp.status_code)
             log.debug('RESPONSE_BODY: %s' % resp.content)
             log.debug('RESPONSE_HEADERS: %s' % resp.headers)
@@ -611,7 +613,7 @@ class P2P(object):
             if not self.debug:
                 log.error('URL: %s' % url)
                 log.error('HEADERS: %s' % self.http_headers('application/json'))
-                log.error('PAYLOAD: %s' % json.dumps(data))
+                log.error('PAYLOAD: %s' % payload)
                 log.error('STATUS: %s' % resp.status_code)
                 log.error('RESPONSE_BODY: %s' % resp.content)
                 log.error('RESPONSE_HEADERS: %s' % resp.headers)
