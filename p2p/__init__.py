@@ -497,22 +497,35 @@ class P2P(object):
 
         return fancy_section
 
-    def get_thumb_for_slug(self, slug):
+    def get_thumb_for_slug(self, slug, force_update=False):
         """
         Get information on how to display images associated with this slug
         """
         url = "%s/photos/turbine/%s.json" % (
             self.config['IMAGE_SERVICES_URL'], slug)
 
-        resp = requests.get(
-            url,
-            headers=self.http_headers(),
-            verify=False)
+        thumb = None
 
-        if resp.ok:
-            return resp.json()
+        if force_update:
+            resp = requests.get(
+                url,
+                headers=self.http_headers(),
+                verify=False)
+            if resp.ok:
+                thumb = resp.json()
+                self.cache.save_thumb(thumb)
         else:
-            return None
+            thumb = self.cache.get_thumb(slug)
+            if not thumb:
+                resp = requests.get(
+                    url,
+                    headers=self.http_headers(),
+                    verify=False)
+                if resp.ok:
+                    thumb = resp.json()
+                    self.cache.save_thumb(thumb)
+
+        return thumb
 
     # Utilities
     def http_headers(self, content_type=None):

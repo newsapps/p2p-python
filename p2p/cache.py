@@ -23,6 +23,9 @@ class BaseCache(object):
     section_configs_hits = 0
     section_configs_gets = 0
 
+    thumb_hits = 0
+    thumb_gets = 0
+
     def __init__(self, prefix='p2p'):
         """
         Takes one parameter, the name of this cache
@@ -58,6 +61,19 @@ class BaseCache(object):
                         str(content_item['id']),
                         self.query_to_key(query)])
         self.set(key, content_item)
+
+    def get_thumb(self, slug):
+        self.thumb_gets += 1
+
+        key = "_".join([self.prefix, 'thumb', slug])
+        ret = self.get(key)
+        if ret:
+            self.thumb_hits += 1
+        return ret
+
+    def save_thumb(self, thumb):
+        key = "_".join([self.prefix, 'thumb', thumb['slug']])
+        self.set(key, thumb)
 
     def get_collection(self, slug=None, id=None, query=None):
         self.collections_gets += 1
@@ -212,6 +228,12 @@ class NoCache(BaseCache):
         return None
 
     def save_section_configs(self, path, section):
+        pass
+
+    def get_thumb(self, slug):
+        return None
+
+    def save_thumb(self, thumb):
         pass
 
 
