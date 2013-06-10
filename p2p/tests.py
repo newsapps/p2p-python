@@ -104,26 +104,6 @@ class TestP2P(unittest.TestCase):
         for k in self.content_item_keys:
             self.assertIn(k, data[0].keys())
 
-    # TODO: test redis cache
-    def test_cache(self):
-        # Get a list of availabe classes to test
-        test_backends = ('DictionaryCache', 'DjangoCache')
-        cache_backends = list()
-        for backend in test_backends:
-            if hasattr(cache, backend):
-                cache_backends.append(getattr(cache, backend))
-
-        content_item_ids = [
-            58253183, 56809651, 56810874, 56811192, 58253247]
-
-        for cls in cache_backends:
-            self.p2p.cache = cls()
-            data = self.p2p.get_multi_content_items(ids=content_item_ids)
-            data = self.p2p.get_content_item(self.content_item_slug)
-            stats = self.p2p.cache.get_stats()
-            self.assertEqual(stats['content_item_gets'], 6)
-            self.assertEqual(stats['content_item_hits'], 1)
-
     def test_fancy_collection(self):
         data = self.p2p.get_fancy_collection(
             self.collection_slug, with_collection=True)
@@ -191,6 +171,7 @@ class TestP2P(unittest.TestCase):
     def test_get_section(self):
         data = self.p2p.get_section('/news/local/breaking')
 
+        self.assertEqual(type(data), dict)
         #pp.pprint(data)
 
 
@@ -246,9 +227,9 @@ class TestWorkflows(unittest.TestCase):
 
             # Create photo
             photo = self.p2p.create_content_item(photo_data)
-            self.assertIn('multimedia', photo)
+            self.assertIn('photo', photo)
             self.assertEqual(
-                photo['multimedia']['slug'], photo_data['slug'])
+                photo['photo']['slug'], photo_data['slug'])
 
             # Add photo as related item to the article
             self.assertEqual(
@@ -276,6 +257,54 @@ class TestWorkflows(unittest.TestCase):
             if article:
                 self.assertTrue(self.p2p.delete_content_item(
                     article_data['slug']))
+
+
+class TestP2PCache(unittest.TestCase):
+    def setUp(self):
+        self.content_item_slug = 'chi-na-lorem-a'
+        self.collection_slug = 'chi_na_lorem'
+        self.p2p = get_connection()
+        self.p2p.debug = True
+        self.maxDiff = None
+
+    def test_cache(self):
+        # Get a list of availabe classes to test
+        test_backends = ('DictionaryCache', 'DjangoCache')
+        cache_backends = list()
+        for backend in test_backends:
+            if hasattr(cache, backend):
+                cache_backends.append(getattr(cache, backend))
+
+        content_item_ids = [
+            58253183, 56809651, 56810874, 56811192, 58253247]
+
+        for cls in cache_backends:
+            self.p2p.cache = cls()
+            data = self.p2p.get_multi_content_items(ids=content_item_ids)
+            data = self.p2p.get_content_item(self.content_item_slug)
+            stats = self.p2p.cache.get_stats()
+            self.assertEqual(stats['content_item_gets'], 6)
+            self.assertEqual(stats['content_item_hits'], 1)
+
+    #@unittest.skip("Beware, will delete everything from redis")
+    def test_redis_cache(self):
+        content_item_ids = [
+            58253183, 56809651, 56810874, 56811192, 58253247]
+
+        self.p2p.cache = cache.RedisCache()
+        self.p2p.cache.clear()
+        data = self.p2p.get_multi_content_items(ids=content_item_ids)
+        data = self.p2p.get_content_item(self.content_item_slug)
+        stats = self.p2p.cache.get_stats()
+        self.assertEqual(stats['content_item_gets'], 6)
+        self.assertEqual(stats['content_item_hits'], 1)
+
+        removed = self.p2p.cache.remove_content_item(self.content_item_slug)
+        data = self.p2p.get_content_item(self.content_item_slug)
+        stats = self.p2p.cache.get_stats()
+        self.assertTrue(removed)
+        self.assertEqual(stats['content_item_gets'], 7)
+        self.assertEqual(stats['content_item_hits'], 1)
 
 
 if __name__ == '__main__':
