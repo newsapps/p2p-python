@@ -335,7 +335,7 @@ try:
             """
             # construct a redis key query to get the keys for all copies of
             # this content item in the cache
-            key_query = self.make_key('collection', slug, '*')
+            key_query = self.make_key('collection_layout', slug, '*')
             matching_keys = self.r.keys(key_query)
 
             # if we don't have any keys, bail
