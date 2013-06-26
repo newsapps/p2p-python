@@ -348,11 +348,33 @@ class P2P(object):
 
     def push_into_content_item(self, code, content_item_slugs):
         """
-        Push a list of content item slugs onto the top of a collection
+        Push a list of content item slugs onto the top of the related
+        items list for a content item
         """
         return self.put_json(
             '/content_items/prepend.json?id=%s' % code,
             {'items': content_item_slugs})
+    
+    def insert_into_content_item(self, code, content_item_slugs, position=1):
+        """
+        Insert a list of content item slugs into the related items list for
+        a content item, starting at the specified position
+        """
+        return self.put_json(
+            '/content_items/insert.json?id=%s' % code,
+            {'items': [{
+                'slug': content_item_slugs[i], 'position': position + i
+            } for i in range(len(content_item_slugs))]})
+    
+    def append_into_content_item(self, code, content_item_slugs):
+        """
+        Convenience function to append a list of content item slugs to the end 
+        of the related items list for a content item
+        """
+        query = {'include': 'related_items'}
+        ci = self.get_content_item(code, query=query, force_update=True)
+        return self.insert_into_content_item(
+            code, content_item_slugs, position=(len(ci['related_items']) + 1))
 
     def get_collection_layout(self, code, query=None, force_update=False):
         if not query:
