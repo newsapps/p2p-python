@@ -100,7 +100,7 @@ class P2P(object):
                  content_item_defaults=None):
         self.config = {
             'P2P_API_ROOT': url,
-            'P2P_AUTH_TOKEN': auth_token,
+            'P2P_API_KEY': auth_token,
             'IMAGE_SERVICES_URL': image_services_url,
         }
         self.cache = cache
@@ -473,7 +473,7 @@ class P2P(object):
     # Utilities
     def http_headers(self, content_type=None):
         h = {
-            'Authorization': 'Bearer %(P2P_AUTH_TOKEN)s' % self.config,
+            'Authorization': 'Bearer %(P2P_API_KEY)s' % self.config,
         }
         if content_type is not None:
             h['content-type'] = content_type
