@@ -11,9 +11,11 @@ from copy import deepcopy
 
 from cache import NoCache
 import utils
+import time
+
 
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger('p2p')
 
 
 def get_connection():
@@ -42,16 +44,6 @@ def get_connection():
     If you need to pass in your config, just create a new p2p object.
     """
 
-    import os
-    # Try getting settings from environment variables
-    if 'P2P_API_KEY' in os.environ and 'P2P_API_URL' in os.environ:
-        return P2P(
-            url=os.environ['P2P_API_URL'],
-            auth_token=os.environ['P2P_API_KEY'],
-            debug=os.environ.get('P2P_API_DEBUG', False),
-            image_services_url=os.environ.get('P2P_IMAGE_SERVICES_URL', None)
-        )
-
     # Try getting settings from Django
     try:
         from django.conf import settings
@@ -63,7 +55,15 @@ def get_connection():
                 settings, 'P2P_IMAGE_SERVICES_URL', None)
         )
     except ImportError, e:
-        pass
+        import os
+        # Try getting settings from environment variables
+        if 'P2P_API_KEY' in os.environ and 'P2P_API_URL' in os.environ:
+            return P2P(
+                url=os.environ['P2P_API_URL'],
+                auth_token=os.environ['P2P_API_KEY'],
+                debug=os.environ.get('P2P_API_DEBUG', False),
+                image_services_url=os.environ.get('P2P_IMAGE_SERVICES_URL', None)
+            )
 
     raise P2PException("No connection settings available. Please put settings "
                        "in your environment variables or your Django config")
@@ -263,6 +263,14 @@ class P2P(object):
         resp = self.post_json('/content_items.json', data)
         return resp
 
+    def delete_content_item(self, slug):
+        """
+        Delete the content item out of p2p
+        """
+        result = self.delete(
+            '/content_items/%s.json' % slug)
+        return True if "destroyed successfully" in result else False
+
     def create_or_update_content_item(self, content_item):
         """
         Attempts to update a content item, if it doesn't exist, attempts to
@@ -275,13 +283,9 @@ class P2P(object):
         create = False
         try:
             response = self.update_content_item(content_item)
-        except requests.exceptions.HTTPError, e:
-            if e.response.status_code == 404:
-                time.sleep(2)
-                response = self.create_content_item(content_item)
-                create = True
-            else:
-                raise e
+        except P2PException:
+            response = self.create_content_item(content_item)
+            create = True
 
         return (create, response)
 
@@ -344,11 +348,33 @@ class P2P(object):
 
     def push_into_content_item(self, code, content_item_slugs):
         """
-        Push a list of content item slugs onto the top of a collection
+        Push a list of content item slugs onto the top of the related
+        items list for a content item
         """
         return self.put_json(
             '/content_items/prepend.json?id=%s' % code,
             {'items': content_item_slugs})
+    
+    def insert_into_content_item(self, code, content_item_slugs, position=1):
+        """
+        Insert a list of content item slugs into the related items list for
+        a content item, starting at the specified position
+        """
+        return self.put_json(
+            '/content_items/insert.json?id=%s' % code,
+            {'items': [{
+                'slug': content_item_slugs[i], 'position': position + i
+            } for i in range(len(content_item_slugs))]})
+    
+    def append_into_content_item(self, code, content_item_slugs):
+        """
+        Convenience function to append a list of content item slugs to the end 
+        of the related items list for a content item
+        """
+        query = {'include': 'related_items'}
+        ci = self.get_content_item(code, query=query, force_update=True)
+        return self.insert_into_content_item(
+            code, content_item_slugs, position=(len(ci['related_items']) + 1))
 
     def get_collection_layout(self, code, query=None, force_update=False):
         if not query:
@@ -446,29 +472,82 @@ class P2P(object):
         if force_update:
             data = self.get('/sections/show_collections.json', query)
             section = data
-            self.cache.save_section(section, path=path)
+            self.cache.save_section(path, section)
         else:
             section = self.cache.get_section(path)
             if section is None:
                 data = self.get('/sections/show_collections.json', query)
                 section = data
-                self.cache.save_section(section, path=path)
+                self.cache.save_section(path, section)
 
         return section
 
-    def get_thumb_for_slug(self, slug):
+    def get_section_configs(self, path, force_update=False):
+        query = {
+            'section_path': path,
+            'product_affiliate_code': 'chinews'
+        }
+        if force_update:
+            data = self.get('/sections/show_configs.json', query)
+            section = data
+            self.cache.save_section_configs(path, section)
+        else:
+            section = self.cache.get_section_configs(path)
+            if section is None:
+                data = self.get('/sections/show_configs.json', query)
+                section = data
+                self.cache.save_section_configs(path, section)
+
+        return section
+
+    def get_fancy_section(self, path, force_update=False):
+        section = self.get_section(path, force_update)
+        config = self.get_section_configs(path, force_update)
+        collections = list()
+        collection_dupes = list()
+        for c in section['results']['module_collections']:
+            if c['code'] not in collection_dupes:
+                collection_dupes.append(c['code'])
+                collections.append({
+                    'collection_type_code': c['collection_type_code'],
+                    'name': c['name'],
+                    'collection': self.get_fancy_collection(c['code'])
+                })
+        fancy_section = config['results']['section_configs'][0]
+        fancy_section['collections'] = collections
+        fancy_section['path'] = path
+
+        return fancy_section
+
+    def get_thumb_for_slug(self, slug, force_update=False):
+        """
+        Get information on how to display images associated with this slug
+        """
         url = "%s/photos/turbine/%s.json" % (
             self.config['IMAGE_SERVICES_URL'], slug)
 
-        resp = requests.get(
-            url,
-            headers=self.http_headers(),
-            verify=False)
+        thumb = None
 
-        if resp.ok:
-            return resp.json()
+        if force_update:
+            resp = requests.get(
+                url,
+                headers=self.http_headers(),
+                verify=False)
+            if resp.ok:
+                thumb = resp.json()
+                self.cache.save_thumb(thumb)
         else:
-            return None
+            thumb = self.cache.get_thumb(slug)
+            if not thumb:
+                resp = requests.get(
+                    url,
+                    headers=self.http_headers(),
+                    verify=False)
+                if resp.ok:
+                    thumb = resp.json()
+                    self.cache.save_thumb(thumb)
+
+        return thumb
 
     # Utilities
     def http_headers(self, content_type=None):
@@ -490,8 +569,13 @@ class P2P(object):
         if self.debug:
             log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
+            log.debug('STATUS: %s' % resp.status_code)
+            log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
             resp.raise_for_status()
+        elif resp.status_code == 404:
+            raise P2PNotFound(url)
         elif resp.status_code >= 400:
             try:
                 data = resp.json()
@@ -500,38 +584,89 @@ class P2P(object):
             raise P2PException(resp.content, data)
         return utils.parse_response(resp.json())
 
+    def delete(self, url):
+        resp = requests.delete(
+            self.config['P2P_API_ROOT'] + url,
+            headers=self.http_headers(),
+            verify=False)
+        if self.debug:
+            log.debug('URL: %s' % url)
+            log.debug('HEADERS: %s' % self.http_headers())
+            log.debug('STATUS: %s' % resp.status_code)
+            log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
+        if resp.status_code >= 500:
+            resp.raise_for_status()
+        elif resp.status_code == 404:
+            raise P2PNotFound(url)
+        elif resp.status_code >= 400:
+            try:
+                data = resp.json()
+            except ValueError:
+                data = resp.text
+            raise P2PException(resp.content, data)
+        else:
+            return resp.content
+
     def post_json(self, url, data):
+        payload = json.dumps(utils.parse_request(data))
         resp = requests.post(
             self.config['P2P_API_ROOT'] + url,
-            data=json.dumps(data),
+            data=payload,
             headers=self.http_headers('application/json'),
             verify=False)
         if self.debug:
             log.debug('URL: %s' % url)
             log.debug('HEADERS: %s' % self.http_headers())
-            log.debug('PAYLOAD: %s' % json.dumps(data))
+            log.debug('PAYLOAD: %s' % payload)
+            log.debug('STATUS: %s' % resp.status_code)
+            log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
             resp.raise_for_status()
         elif resp.status_code >= 400:
-            raise P2PException(resp.content, resp.json())
+            if u'{"slug":["has already been taken"]}' == resp.content:
+                raise P2PSlugTaken(data['content_item']['slug'])
+            raise P2PException(resp.content, resp.headers)
         return utils.parse_response(resp.json())
 
     def put_json(self, url, data):
+        payload = json.dumps(utils.parse_request(data))
         resp = requests.put(
             self.config['P2P_API_ROOT'] + url,
-            data=json.dumps(data),
+            data=payload,
             headers=self.http_headers('application/json'),
             verify=False)
         if self.debug:
             log.debug('URL: %s' % url)
-            log.debug('HEADERS: %s' % self.http_headers())
-            log.debug('PAYLOAD: %s' % json.dumps(data))
+            log.debug('HEADERS: %s' % self.http_headers('application/json'))
+            log.debug('PAYLOAD: %s' % payload)
+            log.debug('STATUS: %s' % resp.status_code)
+            log.debug('RESPONSE_BODY: %s' % resp.content)
+            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
         if resp.status_code >= 500:
+            if not self.debug:
+                log.error('URL: %s' % url)
+                log.error('HEADERS: %s' % self.http_headers('application/json'))
+                log.error('PAYLOAD: %s' % payload)
+                log.error('STATUS: %s' % resp.status_code)
+                log.error('RESPONSE_BODY: %s' % resp.content)
+                log.error('RESPONSE_HEADERS: %s' % resp.headers)
             resp.raise_for_status()
+        elif resp.status_code == 404:
+            raise P2PNotFound(url)
         elif resp.status_code >= 400:
-            raise P2PException(resp.content)
+            raise P2PException(resp.content, resp.headers)
         return utils.parse_response(resp.json())
 
 
 class P2PException(Exception):
+    pass
+
+
+class P2PSlugTaken(P2PException):
+    pass
+
+
+class P2PNotFound(P2PException):
     pass
