@@ -40,6 +40,9 @@ def dict_to_qs(dictionary):
                 elif type(v2) in (list, tuple):
                     for v3 in v2:
                         qs.append("%s[%s][]=%s" % (k, k2, v3))
+                elif type(v2) == dict:
+                    for k3, v3 in v2.items():
+                        qs.append("%s[%s][%s]=%s" % (k, k2, k3, v3))
                 else:
                     raise TypeError
         elif type(v) in (str, unicode, int, float, bool):
