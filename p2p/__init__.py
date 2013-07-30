@@ -399,7 +399,7 @@ class P2P(object):
 
     def get_fancy_collection(self, code, with_collection=False,
                              limit_items=25, content_item_query=None,
-                             force_update=False):
+                             collection_query=None, force_update=False):
         """
         Make a few API calls to fetch all possible data for a collection
         and its content items. Returns a collection layout with
@@ -407,10 +407,11 @@ class P2P(object):
         on each layout item.
         """
         collection_layout = self.get_collection_layout(
-            code, force_update=force_update)
+            code, query=collection_query, force_update=force_update)
         if with_collection:
             # Do we want more detailed data about the collection?
-            collection = self.get_collection(code, force_update=force_update)
+            collection = self.get_collection(
+                code, query=collection_query, force_update=force_update)
 
             collection_layout['collection'] = collection
 
