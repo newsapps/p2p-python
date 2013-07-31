@@ -97,7 +97,9 @@ class P2P(object):
                  debug=False, cache=NoCache(),
                  image_services_url=None,
                  default_content_item_query=None,
-                 content_item_defaults=None):
+                 content_item_defaults=None,
+                 product_affiliate_code='chinews',
+                 source_code='chicagotribune'):
         self.config = {
             'P2P_API_ROOT': url,
             'P2P_API_KEY': auth_token,
@@ -105,6 +107,8 @@ class P2P(object):
         }
         self.cache = cache
         self.debug = debug
+        self.product_affiliate_code = product_affiliate_code
+        self.source_code = source_code
 
         if default_content_item_query is None:
             self.default_content_item_query = {'include': ['web_url']}
@@ -114,8 +118,8 @@ class P2P(object):
         if content_item_defaults is None:
             self.content_item_defaults = {
                 "content_item_type_code": "blurb",
-                "product_affiliate_code": "chinews",
-                "source_code": "chicagotribune",
+                "product_affiliate_code": self.product_affiliate_code,
+                "source_code": self.source_code,
                 "content_item_state_code": "live",
             }
         else:
@@ -303,6 +307,10 @@ class P2P(object):
         return resp
 
     def get_collection(self, code, query=None, force_update=False):
+        """
+        Get the data for this collection. To get the items in a collection,
+        use get_collection_layout.
+        """
         if force_update:
             data = self.get('/collections/%s.json' % code, query)
             collection = data['collection']
@@ -316,6 +324,49 @@ class P2P(object):
 
         return collection
 
+    def create_collection(self, data):
+        """
+        Create a new collection. Takes a single argument which should be a
+        dictionary of collection data.
+
+        Example:
+          p2p.create_collection({
+            'code': 'my_new_collection',
+            'name': 'My new collection',
+            'section_path': '/news/local',
+            'collection_type_code': 'misc', // OPTIONAL, defaults to 'misc'
+            'last_modified_time': date, // OPTIONAL, defaults to now
+            'product_affiliate_code': 'chinews' // OPTIONAL, specify default when creating the P2P object
+          })
+        """
+        ret = self.post_json(
+            '/collections.json?id=%s' % data['code'],
+            {
+                'collection': {
+                    'code': data['code'],
+                    'name': data['name'],
+                    'collection_type_code': data.get('collection_type_code',
+                                                     'misc'),
+                    'last_modified_time': data.get('collection_type_code',
+                                                   datetime.utcnow()),
+                },
+                'product_affiliate_code': data.get(
+                    'product_affiliate_code', self.product_affiliate_code),
+                'section_path': data['section_path']
+            })
+
+        if 'collection' in ret:
+            return ret['collection']
+        else:
+            raise P2PException(ret)
+
+    def delete_collection(self, code):
+        """
+        Delete a collection
+        """
+        return self.delete(
+            '/collections/%s.json' % code)
+
     def push_into_collection(self, code, content_item_slugs):
         """
         Push a list of content item slugs onto the top of a collection
@@ -325,10 +376,12 @@ class P2P(object):
             {'items': content_item_slugs})
 
     def suppress_in_collection(
-            self, code, content_item_slugs, affiliates=['chinews']):
+            self, code, content_item_slugs, affiliates=[]):
         """
         Suppress a list of slugs in the specified collection
         """
+        if not affiliates:
+            affiliates.append(self.product_affiliate_code)
         return self.put_json(
             '/collections/suppress.json?id=%s' % code,
             {'items': [{
@@ -336,10 +389,12 @@ class P2P(object):
             } for slug in content_item_slugs]})
 
     def insert_position_in_collection(
-            self, code, slug, affiliates=['chinews']):
+            self, code, slug, affiliates=[]):
         """
         Suppress a list of slugs in the specified collection
         """
+        if not affiliates:
+            affiliates.append(self.product_affiliate_code)
         return self.put_json(
             '/collections/insert.json?id=%s' % code,
             {'items': [{
@@ -468,7 +523,7 @@ class P2P(object):
     def get_section(self, path, force_update=False):
         query = {
             'section_path': path,
-            'product_affiliate_code': 'chinews'
+            'product_affiliate_code': self.product_affiliate_code
         }
         if force_update:
             data = self.get('/sections/show_collections.json', query)
@@ -486,7 +541,7 @@ class P2P(object):
     def get_section_configs(self, path, force_update=False):
         query = {
             'section_path': path,
-            'product_affiliate_code': 'chinews'
+            'product_affiliate_code': self.product_affiliate_code
         }
         if force_update:
             data = self.get('/sections/show_configs.json', query)
@@ -628,6 +683,8 @@ class P2P(object):
         elif resp.status_code >= 400:
             if u'{"slug":["has already been taken"]}' == resp.content:
                 raise P2PSlugTaken(data['content_item']['slug'])
+            elif u'{"code":["has already been taken"]}' in resp.content:
+                raise P2PSlugTaken(data['collection']['code'])
             raise P2PException(resp.content, resp.headers)
         return utils.parse_response(resp.json())
 

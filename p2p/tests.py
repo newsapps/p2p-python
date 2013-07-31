@@ -174,6 +174,23 @@ class TestP2P(unittest.TestCase):
         self.assertEqual(type(data), dict)
         #pp.pprint(data)
 
+    def test_create_delete_collection(self):
+        try:
+            data = self.p2p.create_collection({
+                'code': 'chi_test_api_create',
+                'name': 'Test collection created via API',
+                'section_path': '/test/newsapps'
+            })
+
+            self.assertEqual(data['code'], 'chi_test_api_create')
+            self.assertEqual(data['name'], 'Test collection created via API')
+
+        finally:
+            data = self.p2p.delete_collection('chi_test_api_create')
+
+        self.assertEqual(
+            data, "Collection 'chi_test_api_create' destroyed successfully")
+
 
 class TestWorkflows(unittest.TestCase):
     def setUp(self):
