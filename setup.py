@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="p2p",
-    version="1.3.4",
+    version="1.3.5",
 
     packages=find_packages(),
     install_requires=["python-dateutil",
