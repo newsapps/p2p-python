@@ -409,7 +409,7 @@ class P2P(object):
         return self.put_json(
             '/content_items/prepend.json?id=%s' % code,
             {'items': content_item_slugs})
-    
+
     def insert_into_content_item(self, code, content_item_slugs, position=1):
         """
         Insert a list of content item slugs into the related items list for
@@ -420,10 +420,10 @@ class P2P(object):
             {'items': [{
                 'slug': content_item_slugs[i], 'position': position + i
             } for i in range(len(content_item_slugs))]})
-    
+
     def append_into_content_item(self, code, content_item_slugs):
         """
-        Convenience function to append a list of content item slugs to the end 
+        Convenience function to append a list of content item slugs to the end
         of the related items list for a content item
         """
         query = {'include': 'related_items'}
@@ -686,7 +686,11 @@ class P2P(object):
             elif u'{"code":["has already been taken"]}' in resp.content:
                 raise P2PSlugTaken(data['collection']['code'])
             raise P2PException(resp.content, resp.headers)
-        return utils.parse_response(resp.json())
+        try:
+            return utils.parse_response(resp.json())
+        except ValueError, e:
+            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE: %s', e)
+            return {}
 
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
@@ -715,7 +719,11 @@ class P2P(object):
             raise P2PNotFound(url)
         elif resp.status_code >= 400:
             raise P2PException(resp.content, resp.headers)
-        return utils.parse_response(resp.json())
+        try:
+            return utils.parse_response(resp.json())
+        except ValueError, e:
+            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE: %s', e)
+            return {}
 
 
 class P2PException(Exception):
