@@ -27,7 +27,6 @@ setup(
                 "the \"p2p\" name you'll see everywhere. Also works as a "
                 "Django app. Add \"p2p\" to your apps to get models and a "
                 "management command to cache content in your Django database.",
-    #long_description=open('README.rst', 'rt').read(),
     url="http://github.com/newsapps/p2p-python",
     license="MIT",
     keywords=['Development Status :: 4 - Beta',

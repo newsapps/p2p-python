@@ -1,11 +1,9 @@
 #! /usr/bin/env python
 import unittest
 
-from __init__ import get_connection
+from __init__ import get_connection, P2PNotFound
 from auth import authenticate, P2PAuthError
 import cache
-import inspect
-import sys
 
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
@@ -17,32 +15,35 @@ class TestP2P(unittest.TestCase):
         self.collection_slug = 'chi_na_lorem'
         self.p2p = get_connection()
         self.p2p.debug = True
-        self.p2p.config['IMAGE_SERVICES_URL'] = 'http://image.p2p.tribuneinteractive.com'
+        self.p2p.config['IMAGE_SERVICES_URL'] = \
+            'http://image.p2p.tribuneinteractive.com'
         self.maxDiff = None
 
-        self.content_item_keys = ('altheadline', 'expire_time',
-                'canonical_url', 'mobile_title', 'create_time',
-                'source_name', 'last_modified_time', 'seodescription',
-                'exclusivity', 'content_type_group_code', 'byline',
-                'title', 'dateline', 'brief', 'id', 'web_url', 'body',
-                'display_time', 'publish_time', 'undated', 'is_opinion',
-                'columnist_id', 'live_time', 'titleline',
-                'ad_exclusion_category', 'product_affiliate_code',
-                'content_item_state_code', 'seo_redirect_url', 'slug',
-                'content_item_type_code', 'deckheadline', 'seo_keyphrase',
-                'mobile_highlights', 'subheadline', 'thumbnail_url',
-                'source_code', 'ad_keywords', 'seotitle', 'alt_thumbnail_url')
-        self.collection_keys = ('created_at', 'code', 'name',
-                'sequence', 'max_elements', 'productaffiliatesection_id',
-                'last_modified_time', 'collection_type_code',
-                'exclusivity', 'id')
-        self.content_layout_keys = ('code', 'items',
-                'last_modified_time', 'collection_id', 'id')
+        self.content_item_keys = (
+            'altheadline', 'expire_time',
+            'canonical_url', 'mobile_title', 'create_time',
+            'source_name', 'last_modified_time', 'seodescription',
+            'exclusivity', 'content_type_group_code', 'byline',
+            'title', 'dateline', 'brief', 'id', 'web_url', 'body',
+            'display_time', 'publish_time', 'undated', 'is_opinion',
+            'columnist_id', 'live_time', 'titleline',
+            'ad_exclusion_category', 'product_affiliate_code',
+            'content_item_state_code', 'seo_redirect_url', 'slug',
+            'content_item_type_code', 'deckheadline', 'seo_keyphrase',
+            'mobile_highlights', 'subheadline', 'thumbnail_url',
+            'source_code', 'ad_keywords', 'seotitle', 'alt_thumbnail_url')
+        self.collection_keys = (
+            'created_at', 'code', 'name',
+            'sequence', 'max_elements', 'productaffiliatesection_id',
+            'last_modified_time', 'collection_type_code',
+            'exclusivity', 'id')
+        self.content_layout_keys = (
+            'code', 'items', 'last_modified_time', 'collection_id', 'id')
         self.content_layout_item_keys = (
-                'content_item_type_code', 'content_item_state_code',
-                'sequence', 'headline', 'abstract',
-                'productaffiliatesection_id', 'slug', 'subheadline',
-                'last_modified_time', 'contentitem_id', 'id')
+            'content_item_type_code', 'content_item_state_code',
+            'sequence', 'headline', 'abstract',
+            'productaffiliatesection_id', 'slug', 'subheadline',
+            'last_modified_time', 'contentitem_id', 'id')
 
     def test_get_content_item(self):
         data = self.p2p.get_content_item(self.content_item_slug)
@@ -212,11 +213,6 @@ class TestWorkflows(unittest.TestCase):
             'byline': 'By Bobby Tables',
             'body': 'lorem ipsum',
             'content_item_type_code': 'story',
-            #'photo_upload': {
-                #'alt_thumbnail': {
-                    #'url': 'http://media.apps.chicagotribune.com/api_test.jpg'
-                #}
-            #}
         }
         photo_data = {
             'slug': 'chi_na_test_create_update_delete_photo',
@@ -230,9 +226,12 @@ class TestWorkflows(unittest.TestCase):
             }
         }
 
-        #self.p2p.delete_content_item(photo_data['slug'])
-        #self.p2p.delete_content_item(article_data['slug'])
-        #return True
+        # make sure we're clean
+        try:
+            self.p2p.delete_content_item(photo_data['slug'])
+            self.p2p.delete_content_item(article_data['slug'])
+        except P2PNotFound:
+            pass
 
         article = photo = None
         try:
@@ -297,8 +296,8 @@ class TestP2PCache(unittest.TestCase):
 
         for cls in cache_backends:
             self.p2p.cache = cls()
-            data = self.p2p.get_multi_content_items(ids=content_item_ids)
-            data = self.p2p.get_content_item(self.content_item_slug)
+            self.p2p.get_multi_content_items(ids=content_item_ids)
+            self.p2p.get_content_item(self.content_item_slug)
             stats = self.p2p.cache.get_stats()
             self.assertEqual(stats['content_item_gets'], 6)
             self.assertEqual(stats['content_item_hits'], 1)
@@ -310,14 +309,14 @@ class TestP2PCache(unittest.TestCase):
 
         self.p2p.cache = cache.RedisCache()
         self.p2p.cache.clear()
-        data = self.p2p.get_multi_content_items(ids=content_item_ids)
-        data = self.p2p.get_content_item(self.content_item_slug)
+        self.p2p.get_multi_content_items(ids=content_item_ids)
+        self.p2p.get_content_item(self.content_item_slug)
         stats = self.p2p.cache.get_stats()
         self.assertEqual(stats['content_item_gets'], 6)
         self.assertEqual(stats['content_item_hits'], 1)
 
         removed = self.p2p.cache.remove_content_item(self.content_item_slug)
-        data = self.p2p.get_content_item(self.content_item_slug)
+        self.p2p.get_content_item(self.content_item_slug)
         stats = self.p2p.cache.get_stats()
         self.assertTrue(removed)
         self.assertEqual(stats['content_item_gets'], 7)
