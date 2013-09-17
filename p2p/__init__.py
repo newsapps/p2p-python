@@ -572,7 +572,7 @@ class P2P(object):
                     'name': c['name'],
                     'collection': self.get_fancy_collection(c['code'])
                 })
-        fancy_section = config['results']['section_configs'][0]
+        fancy_section = config['results']['section_config']
         fancy_section['collections'] = collections
         fancy_section['path'] = path
 
