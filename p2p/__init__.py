@@ -99,7 +99,8 @@ class P2P(object):
                  default_content_item_query=None,
                  content_item_defaults=None,
                  product_affiliate_code='chinews',
-                 source_code='chicagotribune'):
+                 source_code='chicagotribune',
+                 webapp_name='tRibbit'):
         self.config = {
             'P2P_API_ROOT': url,
             'P2P_API_KEY': auth_token,
@@ -109,6 +110,7 @@ class P2P(object):
         self.debug = debug
         self.product_affiliate_code = product_affiliate_code
         self.source_code = source_code
+        self.webapp_name = webapp_name
 
         if default_content_item_query is None:
             self.default_content_item_query = {'include': ['web_url']}
@@ -541,7 +543,8 @@ class P2P(object):
     def get_section_configs(self, path, force_update=False):
         query = {
             'section_path': path,
-            'product_affiliate_code': self.product_affiliate_code
+            'product_affiliate_code': self.product_affiliate_code,
+            'webapp_name': self.webapp_name
         }
         if force_update:
             data = self.get('/sections/show_configs.json', query)

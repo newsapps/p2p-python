@@ -321,6 +321,32 @@ class TestP2PCache(unittest.TestCase):
         self.assertTrue(removed)
         self.assertEqual(stats['content_item_gets'], 7)
         self.assertEqual(stats['content_item_hits'], 1)
+        
+        section_path = '/test/newsapps'
+        section = self.p2p.get_section(section_path)
+        self.p2p.cache.save_section(section_path, section)
+        section_configs = self.p2p.get_section_configs(section_path)
+        self.p2p.cache.save_section_configs(section_path, section_configs)
+        section = self.p2p.get_section(section_path)
+        section_configs = self.p2p.get_section_configs(section_path)
+        stats = self.p2p.cache.get_stats()
+        self.assertEqual(stats['sections_gets'], 2)
+        self.assertEqual(stats['sections_hits'], 1)
+        self.assertEqual(stats['section_configs_gets'], 2)
+        self.assertEqual(stats['section_configs_hits'], 1)
+
+        removed_section = self.p2p.cache.remove_section(section_path)
+        removed_section_configs = self.p2p.cache.remove_section_configs(
+            section_path)
+        section = self.p2p.get_section(section_path)
+        section_configs = self.p2p.get_section_configs(section_path)
+        stats = self.p2p.cache.get_stats()
+        self.assertTrue(removed_section)
+        self.assertTrue(removed_section_configs)
+        self.assertEqual(stats['sections_gets'], 3)
+        self.assertEqual(stats['sections_hits'], 1)
+        self.assertEqual(stats['section_configs_gets'], 3)
+        self.assertEqual(stats['section_configs_hits'], 1)
 
 
 if __name__ == '__main__':

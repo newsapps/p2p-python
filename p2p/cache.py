@@ -350,13 +350,35 @@ try:
             """
             Remove all instances of this section from the cache
             """
-            pass
+            # construct a redis key query to get the keys for all copies of
+            # this section in the cache
+            key_query = self.make_key('section', path)
+            matching_keys = self.r.keys(key_query)
+
+            # if we don't have any keys, bail
+            if not matching_keys:
+                return False
+
+            # add the lookup key to our list of keys, then delete them all
+            self.r.delete(*matching_keys)
+            return True
 
         def remove_section_configs(self, path):
             """
             Remove all instances of the configs for this section from the cache
             """
-            pass
+            # construct a redis key query to get the keys for all copies of
+            # this section's configs in the cache
+            key_query = self.make_key('section_configs', path)
+            matching_keys = self.r.keys(key_query)
+
+            # if we don't have any keys, bail
+            if not matching_keys:
+                return False
+
+            # add the lookup key to our list of keys, then delete them all
+            self.r.delete(*matching_keys)
+            return True
 
         def get(self, key):
             ret = self.r.get(key)
