@@ -613,13 +613,14 @@ class P2P(object):
             h['content-type'] = content_type
         return h
 
-    def _check_for_errors(self, resp):
+    def _check_for_errors(self, resp, req_url):
         request_log = {
-            'URL': resp.url,
-            'HEADERS': self.http_headers(),
+            'REQ_URL': req_url,
+            'REQ_HEADERS': self.http_headers(),
+            'RESP_URL': resp.url,
             'STATUS': resp.status_code,
-            'RESPONSE_BODY': resp.content,
-            'RESPONSE_HEADERS': resp.headers,
+            'RESP_BODY': resp.content,
+            'RESP_HEADERS': resp.headers,
         }
 
         if self.debug:
@@ -638,9 +639,9 @@ class P2P(object):
             raise P2PNotFound(resp.url, request_log)
         elif resp.status_code >= 400:
             if u'{"slug":["has already been taken"]}' == resp.content:
-                raise P2PSlugTaken(data['content_item']['slug'])
+                raise P2PSlugTaken(resp.url, request_log)
             elif u'{"code":["has already been taken"]}' in resp.content:
-                raise P2PSlugTaken(data['collection']['code'])
+                raise P2PSlugTaken(resp.url, request_log)
             try:
                 resp.json()
             except ValueError:
@@ -658,11 +659,11 @@ class P2P(object):
             headers=self.http_headers(),
             verify=False)
 
-        log = self._check_for_errors(resp)
+        resp_log = self._check_for_errors(resp, url)
         try:
             return utils.parse_response(resp.json())
         except ValueError:
-            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % log)
+            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise
 
     def delete(self, url):
@@ -671,7 +672,7 @@ class P2P(object):
             headers=self.http_headers(),
             verify=False)
 
-        self._check_for_errors(resp)
+        self._check_for_errors(resp, url)
         return utils.parse_response(resp.content)
 
     def post_json(self, url, data):
@@ -682,11 +683,11 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             verify=False)
 
-        log = self._check_for_errors(resp)
+        resp_log = self._check_for_errors(resp, url)
         try:
             return utils.parse_response(resp.json())
         except ValueError:
-            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % log)
+            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise
 
     def put_json(self, url, data):
@@ -697,11 +698,11 @@ class P2P(object):
             headers=self.http_headers('application/json'),
             verify=False)
 
-        log = self._check_for_errors(resp)
+        resp_log = self._check_for_errors(resp, url)
         try:
             return utils.parse_response(resp.json())
         except ValueError:
-            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % log)
+            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise
 
 
