@@ -525,7 +525,8 @@ class P2P(object):
     def get_section(self, path, force_update=False):
         query = {
             'section_path': path,
-            'product_affiliate_code': self.product_affiliate_code
+            'product_affiliate_code': self.product_affiliate_code,
+            'include': 'default_section_path_collections'
         }
         if force_update:
             data = self.get('/sections/show_collections.json', query)
@@ -563,19 +564,15 @@ class P2P(object):
         section = self.get_section(path, force_update)
         config = self.get_section_configs(path, force_update)
         collections = list()
-        collection_dupes = list()
-        for c in section['results']['module_collections']:
-            if c['code'] not in collection_dupes:
-                collection_dupes.append(c['code'])
-                collections.append({
-                    'collection_type_code': c['collection_type_code'],
-                    'name': c['name'],
-                    'collection': self.get_fancy_collection(c['code'])
-                })
+        for c in section['results']['default_section_path_collections']:
+            collections.append({
+                'collection_type_code': c['collection_type_code'],
+                'name': c['name'],
+                'collection': self.get_fancy_collection(c['code'])
+            })
         fancy_section = config['results']['section_config']
         fancy_section['collections'] = collections
         fancy_section['path'] = path
-
         return fancy_section
 
     def get_thumb_for_slug(self, slug, force_update=False):
