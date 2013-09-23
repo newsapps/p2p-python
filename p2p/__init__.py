@@ -4,7 +4,6 @@ Python wrapper for the Content Services API
 '''
 import requests
 import json
-import os
 import math
 from datetime import datetime
 from copy import deepcopy
@@ -54,7 +53,7 @@ def get_connection():
             image_services_url=getattr(
                 settings, 'P2P_IMAGE_SERVICES_URL', None)
         )
-    except ImportError, e:
+    except ImportError:
         import os
         # Try getting settings from environment variables
         if 'P2P_API_KEY' in os.environ and 'P2P_API_URL' in os.environ:
@@ -614,6 +613,43 @@ class P2P(object):
             h['content-type'] = content_type
         return h
 
+    def _check_for_errors(self, resp, req_url):
+        request_log = {
+            'REQ_URL': req_url,
+            'REQ_HEADERS': self.http_headers(),
+            'RESP_URL': resp.url,
+            'STATUS': resp.status_code,
+            'RESP_BODY': resp.content,
+            'RESP_HEADERS': resp.headers,
+        }
+
+        if self.debug:
+            for k, v in request_log.items():
+                log.debug('%s: %s' % (k, v))
+
+        if resp.status_code >= 500:
+            try:
+                data = resp.json()
+                if 'errors' in data:
+                    raise P2PException(data['errors'][0], request_log)
+            except ValueError:
+                pass
+            resp.raise_for_status()
+        elif resp.status_code == 404:
+            raise P2PNotFound(resp.url, request_log)
+        elif resp.status_code >= 400:
+            if u'{"slug":["has already been taken"]}' == resp.content:
+                raise P2PSlugTaken(resp.url, request_log)
+            elif u'{"code":["has already been taken"]}' in resp.content:
+                raise P2PSlugTaken(resp.url, request_log)
+            try:
+                resp.json()
+            except ValueError:
+                pass
+            raise P2PException(resp.content, request_log)
+
+        return request_log
+
     def get(self, url, query=None):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)
@@ -622,47 +658,22 @@ class P2P(object):
             self.config['P2P_API_ROOT'] + url,
             headers=self.http_headers(),
             verify=False)
-        if self.debug:
-            log.debug('URL: %s' % url)
-            log.debug('HEADERS: %s' % self.http_headers())
-            log.debug('STATUS: %s' % resp.status_code)
-            log.debug('RESPONSE_BODY: %s' % resp.content)
-            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
-        if resp.status_code >= 500:
-            resp.raise_for_status()
-        elif resp.status_code == 404:
-            raise P2PNotFound(url)
-        elif resp.status_code >= 400:
-            try:
-                data = resp.json()
-            except ValueError:
-                data = resp.text
-            raise P2PException(resp.content, data)
-        return utils.parse_response(resp.json())
+
+        resp_log = self._check_for_errors(resp, url)
+        try:
+            return utils.parse_response(resp.json())
+        except ValueError:
+            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
+            raise
 
     def delete(self, url):
         resp = requests.delete(
             self.config['P2P_API_ROOT'] + url,
             headers=self.http_headers(),
             verify=False)
-        if self.debug:
-            log.debug('URL: %s' % url)
-            log.debug('HEADERS: %s' % self.http_headers())
-            log.debug('STATUS: %s' % resp.status_code)
-            log.debug('RESPONSE_BODY: %s' % resp.content)
-            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
-        if resp.status_code >= 500:
-            resp.raise_for_status()
-        elif resp.status_code == 404:
-            raise P2PNotFound(url)
-        elif resp.status_code >= 400:
-            try:
-                data = resp.json()
-            except ValueError:
-                data = resp.text
-            raise P2PException(resp.content, data)
-        else:
-            return resp.content
+
+        self._check_for_errors(resp, url)
+        return utils.parse_response(resp.content)
 
     def post_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
@@ -671,26 +682,13 @@ class P2P(object):
             data=payload,
             headers=self.http_headers('application/json'),
             verify=False)
-        if self.debug:
-            log.debug('URL: %s' % url)
-            log.debug('HEADERS: %s' % self.http_headers())
-            log.debug('PAYLOAD: %s' % payload)
-            log.debug('STATUS: %s' % resp.status_code)
-            log.debug('RESPONSE_BODY: %s' % resp.content)
-            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
-        if resp.status_code >= 500:
-            resp.raise_for_status()
-        elif resp.status_code >= 400:
-            if u'{"slug":["has already been taken"]}' == resp.content:
-                raise P2PSlugTaken(data['content_item']['slug'])
-            elif u'{"code":["has already been taken"]}' in resp.content:
-                raise P2PSlugTaken(data['collection']['code'])
-            raise P2PException(resp.content, resp.headers)
+
+        resp_log = self._check_for_errors(resp, url)
         try:
             return utils.parse_response(resp.json())
-        except ValueError, e:
-            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE: %s', e)
-            return {}
+        except ValueError:
+            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
+            raise
 
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
@@ -699,31 +697,13 @@ class P2P(object):
             data=payload,
             headers=self.http_headers('application/json'),
             verify=False)
-        if self.debug:
-            log.debug('URL: %s' % url)
-            log.debug('HEADERS: %s' % self.http_headers('application/json'))
-            log.debug('PAYLOAD: %s' % payload)
-            log.debug('STATUS: %s' % resp.status_code)
-            log.debug('RESPONSE_BODY: %s' % resp.content)
-            log.debug('RESPONSE_HEADERS: %s' % resp.headers)
-        if resp.status_code >= 500:
-            if not self.debug:
-                log.error('URL: %s' % url)
-                log.error('HEADERS: %s' % self.http_headers('application/json'))
-                log.error('PAYLOAD: %s' % payload)
-                log.error('STATUS: %s' % resp.status_code)
-                log.error('RESPONSE_BODY: %s' % resp.content)
-                log.error('RESPONSE_HEADERS: %s' % resp.headers)
-            resp.raise_for_status()
-        elif resp.status_code == 404:
-            raise P2PNotFound(url)
-        elif resp.status_code >= 400:
-            raise P2PException(resp.content, resp.headers)
+
+        resp_log = self._check_for_errors(resp, url)
         try:
             return utils.parse_response(resp.json())
-        except ValueError, e:
-            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE: %s', e)
-            return {}
+        except ValueError:
+            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
+            raise
 
 
 class P2PException(Exception):
