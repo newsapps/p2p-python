@@ -95,8 +95,6 @@ class P2P(object):
     def __init__(self, url, auth_token,
                  debug=False, cache=NoCache(),
                  image_services_url=None,
-                 default_content_item_query=None,
-                 content_item_defaults=None,
                  product_affiliate_code='chinews',
                  source_code='chicagotribune',
                  webapp_name='tRibbit'):
@@ -111,20 +109,22 @@ class P2P(object):
         self.source_code = source_code
         self.webapp_name = webapp_name
 
-        if default_content_item_query is None:
-            self.default_content_item_query = {'include': ['web_url']}
-        else:
-            self.default_content_item_query = default_content_item_query
+        self.default_filter = {
+            'product_affiliate': self.product_affiliate_code,
+            'state': 'live'
+        }
 
-        if content_item_defaults is None:
-            self.content_item_defaults = {
-                "content_item_type_code": "blurb",
-                "product_affiliate_code": self.product_affiliate_code,
-                "source_code": self.source_code,
-                "content_item_state_code": "live",
-            }
-        else:
-            self.content_item_defaults = content_item_defaults
+        self.default_content_item_query = {
+            'include': ['web_url'],
+            'filter': self.default_filter
+        }
+
+        self.content_item_defaults = {
+            "content_item_type_code": "blurb",
+            "product_affiliate_code": self.product_affiliate_code,
+            "source_code": self.source_code,
+            "content_item_state_code": "live",
+        }
 
     def get_content_item(self, slug, query=None, force_update=False):
         """
@@ -312,6 +312,9 @@ class P2P(object):
         Get the data for this collection. To get the items in a collection,
         use get_collection_layout.
         """
+        if query is None:
+            query = {'filter': self.default_filter}
+
         if force_update:
             data = self.get('/collections/%s.json' % code, query)
             collection = data['collection']
@@ -434,7 +437,10 @@ class P2P(object):
 
     def get_collection_layout(self, code, query=None, force_update=False):
         if not query:
-            query = {'include': 'items'}
+            query = {
+                'include': 'items',
+                'filter': self.default_filter
+            }
 
         if force_update:
             resp = self.get('/current_collections/%s.json' % code, query)
@@ -455,7 +461,8 @@ class P2P(object):
 
     def get_fancy_collection(self, code, with_collection=False,
                              limit_items=25, content_item_query=None,
-                             collection_query=None, force_update=False):
+                             collection_query=None, include_suppressed=False,
+                             force_update=False):
         """
         Make a few API calls to fetch all possible data for a collection
         and its content items. Returns a collection layout with
@@ -464,6 +471,7 @@ class P2P(object):
         """
         collection_layout = self.get_collection_layout(
             code, query=collection_query, force_update=force_update)
+
         if with_collection:
             # Do we want more detailed data about the collection?
             collection = self.get_collection(
@@ -474,15 +482,31 @@ class P2P(object):
         if limit_items:
             # We're only going to fetch limit_items number of things
             # so cut out the extra items in the content_layout
-            collection_layout['items'] = collection_layout['items'][:limit_items]
+            collection_layout['items'] = \
+                collection_layout['items'][:limit_items]
 
-        content_item_ids = [
-            ci['contentitem_id'] for ci in collection_layout['items']
-        ]
+        # Process the list of collection layout items to gather ids to fetch,
+        # and to remove suppressed items, if necessary.
+        content_item_ids = list()
+        remove_these = list()
+        for ci in collection_layout['items']:
+            if not include_suppressed and float(ci['suppressed']) > 0:
+                remove_these.append(ci)
+            else:
+                content_item_ids.append(ci['contentitem_id'])
 
+        # If we're not including suppressed items, remove them from the data
+        if not include_suppressed:
+            for ci in remove_these:
+                collection_layout['items'].remove(ci)
+
+        # Retrieve all the content_items, 25 at a time
         content_items = self.get_multi_content_items(
-            content_item_ids, query=content_item_query, force_update=force_update)
+            content_item_ids, query=content_item_query,
+            force_update=force_update)
 
+        # Loop through the collection items and add the corresponding content
+        # item data.
         for ci in collection_layout['items']:
             for ci2 in content_items:
                 if ci['contentitem_id'] == ci2['id']:

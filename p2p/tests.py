@@ -115,6 +115,8 @@ class TestP2P(unittest.TestCase):
         for k in self.collection_keys:
             self.assertIn(k, data['collection'].keys())
 
+        self.assertEqual(9, len(data['items']))
+
         for k in self.content_layout_item_keys:
             self.assertIn(k, data['items'][0].keys())
 
