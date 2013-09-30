@@ -545,41 +545,43 @@ class P2P(object):
 
         return content_item
 
-    def get_section(self, path, force_update=False):
-        query = {
-            'section_path': path,
-            'product_affiliate_code': self.product_affiliate_code,
-            'include': 'default_section_path_collections'
-        }
+    def get_section(self, path, query=None, force_update=False):
+        if query is None:
+            query = {
+                'section_path': path,
+                'product_affiliate_code': self.product_affiliate_code,
+                'include': 'default_section_path_collections'
+            }
         if force_update:
             data = self.get('/sections/show_collections.json', query)
             section = data
-            self.cache.save_section(path, section)
+            self.cache.save_section(path, section, query)
         else:
-            section = self.cache.get_section(path)
+            section = self.cache.get_section(path, query)
             if section is None:
                 data = self.get('/sections/show_collections.json', query)
                 section = data
-                self.cache.save_section(path, section)
+                self.cache.save_section(path, section, query)
 
         return section
 
-    def get_section_configs(self, path, force_update=False):
-        query = {
-            'section_path': path,
-            'product_affiliate_code': self.product_affiliate_code,
-            'webapp_name': self.webapp_name
-        }
+    def get_section_configs(self, path, query=None, force_update=False):
+        if query is None:
+            query = {
+                'section_path': path,
+                'product_affiliate_code': self.product_affiliate_code,
+                'webapp_name': self.webapp_name
+            }
         if force_update:
             data = self.get('/sections/show_configs.json', query)
             section = data
-            self.cache.save_section_configs(path, section)
+            self.cache.save_section_configs(path, section, query)
         else:
-            section = self.cache.get_section_configs(path)
+            section = self.cache.get_section_configs(path, query)
             if section is None:
                 data = self.get('/sections/show_configs.json', query)
                 section = data
-                self.cache.save_section_configs(path, section)
+                self.cache.save_section_configs(path, section, query)
 
         return section
 

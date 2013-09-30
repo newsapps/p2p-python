@@ -107,32 +107,34 @@ class BaseCache(object):
                             self.query_to_key(query))
         self.set(key, collection_layout)
 
-    def get_section(self, path):
+    def get_section(self, path, query=None):
         self.sections_gets += 1
 
-        key = self.make_key('section', path)
+        key = self.make_key('section', path, self.query_to_key(query))
 
         ret = self.get(key)
         if ret:
             self.sections_hits += 1
         return ret
 
-    def save_section(self, path, section):
-        key = self.make_key('section', path)
+    def save_section(self, path, section, query=None):
+        key = self.make_key('section', path, self.query_to_key(query))
+        self.log_key('section', path, query)
         self.set(key, section)
 
-    def get_section_configs(self, path):
+    def get_section_configs(self, path, query=None):
         self.section_configs_gets += 1
 
-        key = self.make_key('section_configs', path)
+        key = self.make_key('section_configs', path, self.query_to_key(query))
 
         ret = self.get(key)
         if ret:
             self.section_configs_hits += 1
         return ret
 
-    def save_section_configs(self, path, section):
-        key = self.make_key('section_configs', path)
+    def save_section_configs(self, path, section, query=None):
+        key = self.make_key('section_configs', path, self.query_to_key(query))
+        self.log_key('section_configs', path, query)
         self.set(key, section)
 
     def get_stats(self):
@@ -158,6 +160,26 @@ class BaseCache(object):
     def set(self, key, data):
         """
         Save data to a cache key
+        """
+        raise NotImplementedError()
+
+    def log_key(self, type, id, query):
+        """
+        Log the different components of the keys that are so that we can
+        discover what kinds of query responses we're currently caching.
+        Requires a structured data store, like redis or an RDBMS.
+        """
+        raise NotImplementedError()
+
+    def log_ls(self, type, id=None):
+        """
+        List item ids or item queries that are cached.
+        """
+        raise NotImplementedError()
+
+    def log_remove(self, type, id, query):
+        """
+        Remove something from the key log
         """
         raise NotImplementedError()
 
@@ -190,6 +212,7 @@ class DictionaryCache(BaseCache):
     a local memory cache.
     """
     cache = dict()
+    log = dict()
 
     def get(self, key):
         return deepcopy(self.cache[key]) if key in self.cache else None
@@ -197,8 +220,41 @@ class DictionaryCache(BaseCache):
     def set(self, key, data):
         self.cache[key] = deepcopy(data)
 
+    def log_key(self, type, id, query):
+        if type not in self.log:
+            self.log[type] = set()
+        self.log[type].add(id)
+
+        keyname = self.make_key(type, id)
+        if keyname not in self.log:
+            self.log[keyname] = dict()
+        self.log[keyname][utils.dict_to_qs(query)] = deepcopy(query)
+
+    def log_ls(self, type, id=None):
+        if id is None:
+            return self.log[type].copy() if type in self.log else None
+        else:
+            keyname = self.make_key(type, id)
+            return self.log[keyname].values() if keyname in self.log else None
+
+    def log_remove(self, type, id, query):
+        if type in self.log:
+            if id in self.log[type]:
+                self.log[type].remove(id)
+            if len(self.log[type]) == 0:
+                del self.log[type]
+
+        keyname = self.make_key(type, id)
+        query_str = utils.dict_to_qs(query)
+        if keyname in self.log:
+            if query_str in self.log[keyname]:
+                del self.log[keyname][query_str]
+            if len(self.log[keyname]) == 0:
+                del self.log[keyname]
+
     def clear(self):
-        self.cache = dict()
+        self.cache.clear()
+        self.log.clear()
 
 
 class NoCache(BaseCache):
@@ -224,16 +280,16 @@ class NoCache(BaseCache):
     def save_collection_layout(self, collection_layout, query=None):
         pass
 
-    def get_section(self, path):
+    def get_section(self, path, query=None):
         return None
 
-    def save_section(self, path, section):
+    def save_section(self, path, section, query=None):
         pass
 
-    def get_section_configs(self, path):
+    def get_section_configs(self, path, query=None):
         return None
 
-    def save_section_configs(self, path, section):
+    def save_section_configs(self, path, section, query=None):
         pass
 
     def get_thumb(self, slug):
@@ -255,6 +311,9 @@ try:
 
         def set(self, key, data):
             cache.set(key, data)
+
+        def log_key(self, type, id, query):
+            pass
 
 except ImportError, e:
     pass
@@ -352,7 +411,7 @@ try:
             """
             # construct a redis key query to get the keys for all copies of
             # this section in the cache
-            key_query = self.make_key('section', path)
+            key_query = self.make_key('section', path, '*')
             matching_keys = self.r.keys(key_query)
 
             # if we don't have any keys, bail
@@ -369,7 +428,7 @@ try:
             """
             # construct a redis key query to get the keys for all copies of
             # this section's configs in the cache
-            key_query = self.make_key('section_configs', path)
+            key_query = self.make_key('section_configs', path, '*')
             matching_keys = self.r.keys(key_query)
 
             # if we don't have any keys, bail
@@ -386,6 +445,28 @@ try:
 
         def set(self, key, data):
             self.r.set(key, pickle.dumps(data))
+
+        def log_key(self, type, id, query):
+            self.r.sadd(
+                self.make_key(type),
+                id)
+            self.r.sadd(
+                self.make_key(type, id),
+                pickle.dumps(query))
+
+        def log_ls(self, type, id=None):
+            if id is None:
+                return self.r.smembers(self.make_key(type))
+            else:
+                data = self.r.smembers(self.make_key(type, id))
+                return [pickle.loads(item) for item in data] if data else None
+
+        def log_remove(self, type, id, query):
+            self.r.srem(
+                self.make_key(type), id)
+            self.r.srem(
+                self.make_key(type, id),
+                pickle.dumps(query))
 
         def clear(self):
             self.r.flushdb()
