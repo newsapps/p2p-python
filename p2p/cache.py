@@ -203,7 +203,7 @@ class BaseCache(object):
         """
         Take any number of arguments and return a key string
         """
-        return '_'.join([self.prefix] + list(args))
+        return ':'.join([self.prefix] + list(args))
 
 
 class DictionaryCache(BaseCache):
