@@ -7,11 +7,11 @@ import json
 import math
 from datetime import datetime
 from copy import deepcopy
+from wsgiref.handlers import format_date_time
+from time import mktime
 
 from cache import NoCache
 import utils
-import time
-
 
 import logging
 log = logging.getLogger('p2p')
@@ -61,7 +61,8 @@ def get_connection():
                 url=os.environ['P2P_API_URL'],
                 auth_token=os.environ['P2P_API_KEY'],
                 debug=os.environ.get('P2P_API_DEBUG', False),
-                image_services_url=os.environ.get('P2P_IMAGE_SERVICES_URL', None)
+                image_services_url=os.environ.get(
+                    'P2P_IMAGE_SERVICES_URL', None)
             )
 
     raise P2PException("No connection settings available. Please put settings "
@@ -115,7 +116,7 @@ class P2P(object):
         }
 
         self.default_content_item_query = {
-            'include': ['web_url'],
+            'include': ['web_url', 'section', 'related_items'],
             'filter': self.default_filter
         }
 
@@ -140,14 +141,15 @@ class P2P(object):
         if not query:
             query = self.default_content_item_query
 
-        if force_update:
+        ci = self.cache.get_content_item(slug=slug, query=query)
+        if ci is None:
             j = self.get("/content_items/%s.json" % (slug), query)
             ci = j['content_item']
             self.cache.save_content_item(ci, query=query)
-        else:
-            ci = self.cache.get_content_item(slug=slug, query=query)
-            if ci is None:
-                j = self.get("/content_items/%s.json" % (slug), query)
+        elif force_update:
+            j = self.get("/content_items/%s.json" % (slug),
+                         query, if_modified_since=ci['last_modified_time'])
+            if j:
                 ci = j['content_item']
                 self.cache.save_content_item(ci, query=query)
         return ci
@@ -165,68 +167,89 @@ class P2P(object):
         for details on parameters.
         """
         ret = list()
-        items = list()
-        if_modified_since = datetime(1900, 1, 1)
+        ids_query = list()
+        if_modified_since = format_date_time(
+            mktime(datetime(2000, 1, 1).utctimetuple()))
 
         if not query:
             query = self.default_content_item_query
 
         # Pull as many items out of cache as possible
-        for id in ids:
-            if force_update:
-                items.append({
-                    "id": id,
-                    "if_modified_since": utils.formatdate(if_modified_since),
-                })
-            else:
-                ci = self.cache.get_content_item(id=id, query=query)
-                if ci is None:
-                    items.append({
-                        "id": id,
-                        "if_modified_since": utils.formatdate(
-                            if_modified_since),
-                    })
-                else:
-                    ret.append(ci)
+        ret = [
+            self.cache.get_content_item(
+                id=i, query=query) for i in ids
+        ]
+        assert len(ids) == len(ret)
 
-        if len(items) > 0:
+        # Go through what we had in cache and see if we need to
+        # retrieve anything
+        for i in range(len(ret)):
+            if ret[i] is None:
+                ids_query.append({
+                    "id": ids[i],
+                    "if_modified_since": if_modified_since,
+                })
+            elif force_update:
+                ids_query.append({
+                    "id": ids[i],
+                    "if_modified_since": format_date_time(
+                        mktime(ret[i]['last_modified_time'].utctimetuple())),
+                })
+
+        if len(ids_query) > 0:
             # We can only request 25 things at a time
             # so we're gonna break up the list into batches
             max_items = 25
-            if len(items) > max_items:
-                # we have to use <gasp>MATH</gasp>
-                num_items = len(ids)
 
-                # how many batches of max_items do we have?
-                num_batches = int(
-                    math.ceil(float(num_items) / float(max_items)))
+            # we have to use <gasp>MATH</gasp>
+            num_items = len(ids_query)
 
-                # make a list of indices where we should break the item list
-                index_breaks = [j * max_items for j in range(num_batches)]
+            # how many batches of max_items do we have?
+            num_batches = int(
+                math.ceil(float(num_items) / float(max_items)))
 
-                # break up the items into batches of 25
-                batches = [items[i:i + max_items] for i in index_breaks]
-            else:
-                batches = [items]
+            # make a list of indices where we should break the item list
+            index_breaks = [j * max_items for j in range(num_batches)]
 
+            # break up the items into batches of 25
+            batches = [ids_query[i:i + max_items] for i in index_breaks]
+
+            resp = list()
             for items in batches:
                 multi_query = query.copy()
                 multi_query['content_items'] = items
 
-                resp = self.post_json('/content_items/multi.json', multi_query)
-                for ci_resp in resp:
-                    if ci_resp['status'] == 200:
-                        ci = ci_resp['body']['content_item']
-                        ret.append(ci)
-                        self.cache.save_content_item(ci, query=query)
-                    elif ci_resp['status'] == 404:
-                        pass
-                        #log.error("Content item %(id)s doesn't exsist" % ci_resp)
-                    elif ci_resp['status'] == 304:
-                        pass
-                        #log.warn("Content item %(id)s hasn't changed" % ci_resp)
+                resp += self.post_json(
+                    '/content_items/multi.json', multi_query)
+
+            new_items = list()
+            remove_ids = list()
+            for i in range(len(ret)):
+                if ret[i] is None or force_update:
+                    new_item = resp.pop(0)
+                    assert ids[i] == new_item['id']
+                    if new_item['status'] == 200:
+                        ret[i] = new_item['body']['content_item']
+                        new_items.append(new_item['body']['content_item'])
+                    elif new_item['status'] == 404:
+                        ret[i] = None
+                        remove_ids.append(ids[i])
+                    elif new_item['status'] == 304:
+                        continue
                     else:
-                        raise P2PException('%(status)s fetching %(id)s' % ci_resp)
+                        raise P2PException(
+                            '%(status)s fetching %(id)s' % new_item)
+
+            if len(new_items) > 0:
+                for i in new_items:
+                    self.cache.save_content_item(i, query=query)
+
+            try:
+                if len(remove_ids) > 0:
+                    for i in remove_ids:
+                        self.cache.remove_content_item(id=i)
+            except NotImplementedError:
+                pass
 
         return ret
 
@@ -250,6 +273,10 @@ class P2P(object):
         d = {'content_item': content}
 
         resp = self.put_json("/content_items/%s.json" % slug, d)
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
         return resp
 
     def create_content_item(self, content_item):
@@ -274,6 +301,10 @@ class P2P(object):
         """
         result = self.delete(
             '/content_items/%s.json' % slug)
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
         return True if "destroyed successfully" in result else False
 
     def create_or_update_content_item(self, content_item):
@@ -338,9 +369,10 @@ class P2P(object):
             'code': 'my_new_collection',
             'name': 'My new collection',
             'section_path': '/news/local',
-            'collection_type_code': 'misc', // OPTIONAL, defaults to 'misc'
-            'last_modified_time': date, // OPTIONAL, defaults to now
-            'product_affiliate_code': 'chinews' // OPTIONAL, specify default when creating the P2P object
+            // OPTIONAL PARAMS
+            'collection_type_code': 'misc',  # default 'misc'
+            'last_modified_time': date,  # defaults to now
+            'product_affiliate_code': 'chinews'  # default to instance setting
           })
         """
         ret = self.post_json(
@@ -351,8 +383,9 @@ class P2P(object):
                     'name': data['name'],
                     'collection_type_code': data.get('collection_type_code',
                                                      'misc'),
-                    'last_modified_time': data.get('collection_type_code',
+                    'last_modified_time': data.get('last_modified_time',
                                                    datetime.utcnow()),
+                    'sequence': 999
                 },
                 'product_affiliate_code': data.get(
                     'product_affiliate_code', self.product_affiliate_code),
@@ -368,16 +401,28 @@ class P2P(object):
         """
         Delete a collection
         """
-        return self.delete(
+        ret = self.delete(
             '/collections/%s.json' % code)
+        try:
+            self.cache.remove_collection(code)
+            self.cache.remove_collection_layout(code)
+        except NotImplementedError:
+            pass
+        return ret
 
     def push_into_collection(self, code, content_item_slugs):
         """
         Push a list of content item slugs onto the top of a collection
         """
-        return self.put_json(
+        ret = self.put_json(
             '/collections/prepend.json?id=%s' % code,
             {'items': content_item_slugs})
+        try:
+            self.cache.remove_collection(code)
+            self.cache.remove_collection_layout(code)
+        except NotImplementedError:
+            pass
+        return ret
 
     def suppress_in_collection(
             self, code, content_item_slugs, affiliates=[]):
@@ -386,11 +431,17 @@ class P2P(object):
         """
         if not affiliates:
             affiliates.append(self.product_affiliate_code)
-        return self.put_json(
+        ret = self.put_json(
             '/collections/suppress.json?id=%s' % code,
             {'items': [{
                 'slug': slug, 'affiliates': affiliates
             } for slug in content_item_slugs]})
+        try:
+            self.cache.remove_collection(code)
+            self.cache.remove_collection_layout(code)
+        except NotImplementedError:
+            pass
+        return ret
 
     def insert_position_in_collection(
             self, code, slug, affiliates=[]):
@@ -399,41 +450,61 @@ class P2P(object):
         """
         if not affiliates:
             affiliates.append(self.product_affiliate_code)
-        return self.put_json(
+        ret = self.put_json(
             '/collections/insert.json?id=%s' % code,
             {'items': [{
                 'slug': slug, 'position': 1
             }]})
+        try:
+            self.cache.remove_collection(code)
+            self.cache.remove_collection_layout(code)
+        except NotImplementedError:
+            pass
+        return ret
 
-    def push_into_content_item(self, code, content_item_slugs):
+    def push_into_content_item(self, slug, content_item_slugs):
         """
         Push a list of content item slugs onto the top of the related
         items list for a content item
         """
-        return self.put_json(
-            '/content_items/prepend.json?id=%s' % code,
+        ret = self.put_json(
+            '/content_items/prepend.json?id=%s' % slug,
             {'items': content_item_slugs})
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
+        return ret
 
-    def insert_into_content_item(self, code, content_item_slugs, position=1):
+    def insert_into_content_item(self, slug, content_item_slugs, position=1):
         """
         Insert a list of content item slugs into the related items list for
         a content item, starting at the specified position
         """
-        return self.put_json(
-            '/content_items/insert.json?id=%s' % code,
+        ret = self.put_json(
+            '/content_items/insert.json?id=%s' % slug,
             {'items': [{
                 'slug': content_item_slugs[i], 'position': position + i
             } for i in range(len(content_item_slugs))]})
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
+        return ret
 
-    def append_into_content_item(self, code, content_item_slugs):
+    def append_into_content_item(self, slug, content_item_slugs):
         """
         Convenience function to append a list of content item slugs to the end
         of the related items list for a content item
         """
-        query = {'include': 'related_items'}
-        ci = self.get_content_item(code, query=query, force_update=True)
-        return self.insert_into_content_item(
-            code, content_item_slugs, position=(len(ci['related_items']) + 1))
+        ci = self.get_content_item(slug)
+        ret = self.insert_into_content_item(
+            slug, content_item_slugs, position=(len(ci['related_items']) + 1))
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
+        return ret
 
     def get_collection_layout(self, code, query=None, force_update=False):
         if not query:
@@ -631,12 +702,18 @@ class P2P(object):
         return thumb
 
     # Utilities
-    def http_headers(self, content_type=None):
-        h = {
-            'Authorization': 'Bearer %(P2P_API_KEY)s' % self.config,
-        }
+    def http_headers(self, content_type=None, if_modified_since=None):
+        h = {'Authorization': 'Bearer %(P2P_API_KEY)s' % self.config}
+
         if content_type is not None:
             h['content-type'] = content_type
+
+        if type(if_modified_since) == datetime:
+            h['If-Modified-Since'] = format_date_time(
+                mktime(if_modified_since.utctimetuple()))
+        elif if_modified_since is not None:
+            h['If-Modified-Since'] = if_modified_since
+
         return h
 
     def _check_for_errors(self, resp, req_url):
@@ -676,18 +753,21 @@ class P2P(object):
 
         return request_log
 
-    def get(self, url, query=None):
+    def get(self, url, query=None, if_modified_since=None):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)
 
         resp = requests.get(
             self.config['P2P_API_ROOT'] + url,
-            headers=self.http_headers(),
+            headers=self.http_headers(if_modified_since=if_modified_since),
             verify=False)
 
         resp_log = self._check_for_errors(resp, url)
         try:
-            return utils.parse_response(resp.json())
+            ret = utils.parse_response(resp.json())
+            if 'ETag' in resp.headers:
+                ret['etag'] = resp.headers['ETag']
+            return ret
         except ValueError:
             log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise

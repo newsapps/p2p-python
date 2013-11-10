@@ -63,6 +63,12 @@ class BaseCache(object):
             'content_item', str(content_item['id']), 'lookup')
         self.set(lookup_key, content_item['slug'])
 
+        # Log our query
+        self.log_key('content_item', content_item['slug'], query)
+
+    def remove_content_item(self, slug):
+        raise NotImplementedError
+
     def get_thumb(self, slug):
         self.thumb_gets += 1
 
@@ -90,6 +96,12 @@ class BaseCache(object):
             'collection', collection['code'], self.query_to_key(query))
         self.set(key, collection)
 
+        # Log our query
+        self.log_key('collection', collection['code'], query)
+
+    def remove_collection(self, slug):
+        raise NotImplementedError
+
     def get_collection_layout(self, slug, query=None):
         self.collection_layouts_gets += 1
 
@@ -107,6 +119,12 @@ class BaseCache(object):
                             self.query_to_key(query))
         self.set(key, collection_layout)
 
+        # Log our query
+        self.log_key('collection_layout', collection_layout['code'], query)
+
+    def remove_collection_layout(self, code):
+        return NotImplementedError
+
     def get_section(self, path, query=None):
         self.sections_gets += 1
 
@@ -122,6 +140,12 @@ class BaseCache(object):
         self.log_key('section', path, query)
         self.set(key, section)
 
+        # Log our query
+        self.log_key('section', path, query)
+
+    def remove_section(self, path):
+        raise NotImplementedError
+
     def get_section_configs(self, path, query=None):
         self.section_configs_gets += 1
 
@@ -136,6 +160,12 @@ class BaseCache(object):
         key = self.make_key('section_configs', path, self.query_to_key(query))
         self.log_key('section_configs', path, query)
         self.set(key, section)
+
+        # Log our query
+        self.log_key('section_configs', path, query)
+
+    def remove_section_configs(self, path):
+        raise NotImplementedError
 
     def get_stats(self):
         return {
@@ -350,10 +380,14 @@ try:
                 if slug is None:
                     return False
 
-            # construct a redis key query to get the keys for all copies of
-            # this content item in the cache
-            key_query = self.make_key('content_item', slug, '*')
-            matching_keys = self.r.keys(key_query)
+            # use the log to find all the queries used, construct a list
+            # of cache keys to delete
+            queries = self.log_ls('content_item', slug)
+            matching_keys = [
+                self.make_key(
+                    'content_item', slug,
+                    self.query_to_key(q)) for q in queries
+            ]
 
             # if we don't have any keys, bail
             if not matching_keys:
@@ -375,10 +409,13 @@ try:
             """
             Remove all instances of this collection from the cache
             """
-            # construct a redis key query to get the keys for all copies of
-            # this content item in the cache
-            key_query = self.make_key('collection', slug, '*')
-            matching_keys = self.r.keys(key_query)
+            # use the log to find all the queries used, construct a list
+            # of cache keys to delete
+            queries = self.log_ls('collection', slug)
+            matching_keys = [
+                self.make_key(
+                    'collection', slug, self.query_to_key(q)) for q in queries
+            ]
 
             # if we don't have any keys, bail
             if not matching_keys:
@@ -392,10 +429,13 @@ try:
             """
             Remove all instances of this collection layout from the cache
             """
-            # construct a redis key query to get the keys for all copies of
-            # this content item in the cache
-            key_query = self.make_key('collection_layout', slug, '*')
-            matching_keys = self.r.keys(key_query)
+            # use the log to find all the queries used, construct a list
+            # of cache keys to delete
+            queries = self.log_ls('collection_layout', slug)
+            matching_keys = [
+                self.make_key('collection_layout',
+                              slug, self.query_to_key(q)) for q in queries
+            ]
 
             # if we don't have any keys, bail
             if not matching_keys:
@@ -409,10 +449,13 @@ try:
             """
             Remove all instances of this section from the cache
             """
-            # construct a redis key query to get the keys for all copies of
-            # this section in the cache
-            key_query = self.make_key('section', path, '*')
-            matching_keys = self.r.keys(key_query)
+            # use the log to find all the queries used, construct a list
+            # of cache keys to delete
+            queries = self.log_ls('section', path)
+            matching_keys = [
+                self.make_key('section',
+                              path, self.query_to_key(q)) for q in queries
+            ]
 
             # if we don't have any keys, bail
             if not matching_keys:
@@ -426,10 +469,13 @@ try:
             """
             Remove all instances of the configs for this section from the cache
             """
-            # construct a redis key query to get the keys for all copies of
-            # this section's configs in the cache
-            key_query = self.make_key('section_configs', path, '*')
-            matching_keys = self.r.keys(key_query)
+            # use the log to find all the queries used, construct a list
+            # of cache keys to delete
+            queries = self.log_ls('section_configs', path)
+            matching_keys = [
+                self.make_key('section_configs',
+                              path, self.query_to_key(q)) for q in queries
+            ]
 
             # if we don't have any keys, bail
             if not matching_keys:
@@ -459,7 +505,7 @@ try:
                 return self.r.smembers(self.make_key(type))
             else:
                 data = self.r.smembers(self.make_key(type, id))
-                return [pickle.loads(item) for item in data] if data else None
+                return [pickle.loads(item) for item in data] if data else []
 
         def log_remove(self, type, id, query):
             self.r.srem(

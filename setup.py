@@ -3,8 +3,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="p2p",
-    version="1.5.0",
+    name="p2p-tribune",
+    version="1.5.0-dev",
 
     packages=find_packages(),
     install_requires=["python-dateutil",

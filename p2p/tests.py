@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import unittest
 
-from __init__ import get_connection, P2PNotFound
+from __init__ import get_connection, P2PNotFound, P2PSlugTaken
 from auth import authenticate, P2PAuthError
 import cache
 
@@ -57,13 +57,16 @@ class TestP2P(unittest.TestCase):
             'body': 'lorem ipsum',
             'content_item_type_code': 'story',
         }
+
         try:
             result = self.p2p.create_content_item(data)
-            data2 = data.copy()
-            data2['body'] = 'Lorem ipsum foo bar'
-            result2 = self.p2p.update_content_item(data2)
-        finally:
-            self.assertTrue(self.p2p.delete_content_item(data['slug']))
+        except P2PSlugTaken:
+            pass
+
+        data2 = data.copy()
+        data2['body'] = 'Lorem ipsum foo bar'
+        result2 = self.p2p.update_content_item(data2)
+        self.assertTrue(self.p2p.delete_content_item(data['slug']))
 
         self.assertIn(data['content_item_type_code'], result)
         res = result[data['content_item_type_code']]
@@ -115,7 +118,7 @@ class TestP2P(unittest.TestCase):
         for k in self.collection_keys:
             self.assertIn(k, data['collection'].keys())
 
-        self.assertEqual(12, len(data['items']))
+        self.assertTrue(len(data['items']) > 0)
 
         for k in self.content_layout_item_keys:
             self.assertIn(k, data['items'][0].keys())
@@ -178,18 +181,16 @@ class TestP2P(unittest.TestCase):
         #pp.pprint(data)
 
     def test_create_delete_collection(self):
-        try:
-            data = self.p2p.create_collection({
-                'code': 'chi_test_api_create',
-                'name': 'Test collection created via API',
-                'section_path': '/test/newsapps'
-            })
+        data = self.p2p.create_collection({
+            'code': 'chi_test_api_create',
+            'name': 'Test collection created via API',
+            'section_path': '/test/newsapps'
+        })
 
-            self.assertEqual(data['code'], 'chi_test_api_create')
-            self.assertEqual(data['name'], 'Test collection created via API')
+        self.assertEqual(data['code'], 'chi_test_api_create')
+        self.assertEqual(data['name'], 'Test collection created via API')
 
-        finally:
-            data = self.p2p.delete_collection('chi_test_api_create')
+        data = self.p2p.delete_collection('chi_test_api_create')
 
         self.assertEqual(
             data, "Collection 'chi_test_api_create' destroyed successfully")
