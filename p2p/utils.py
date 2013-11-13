@@ -1,6 +1,6 @@
 import iso8601
 import re
-from iso8601.iso8601 import ISO8601_REGEX
+import pytz
 from datetime import datetime
 from dateutil.parser import parse
 
@@ -101,11 +101,14 @@ def parse_request(data):
 
 
 def formatdate(d=datetime.utcnow()):
-    return d.strftime('%Y-%m-%dT%H:%M:%SZ')
+    try:
+        return d.astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    except ValueError:
+        return d.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def parsedate(d):
     if _iso8601_full_date.match(d) is not None:
-        return iso8601.parse_date(d)
+        return iso8601.parse_date(d).replace(tzinfo=pytz.utc)
     else:
         return parse(d)

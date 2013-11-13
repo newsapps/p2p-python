@@ -10,6 +10,7 @@ setup(
     install_requires=["python-dateutil",
                       "requests",
                       "iso8601",
+                      "pytz",
                     ],
     entry_points={
         'console_scripts': [
