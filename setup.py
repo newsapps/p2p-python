@@ -25,9 +25,7 @@ setup(
     description="Tribune Content Services API wrapper",
     long_description="Python wrapper for the Tribune Corp. Content Services API. "
                 "The CMS is also known as \"Power to the Producers,\" hence "
-                "the \"p2p\" name you'll see everywhere. Also works as a "
-                "Django app. Add \"p2p\" to your apps to get models and a "
-                "management command to cache content in your Django database.",
+                "the \"p2p\" name you'll see everywhere.",
     url="http://github.com/newsapps/p2p-python",
     license="MIT",
     keywords=['Development Status :: 4 - Beta',
