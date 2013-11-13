@@ -4,6 +4,7 @@ import unittest
 from __init__ import get_connection, P2PNotFound, P2PSlugTaken
 from auth import authenticate, P2PAuthError
 import cache
+import filters
 
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
@@ -350,6 +351,139 @@ class TestP2PCache(unittest.TestCase):
         self.assertEqual(stats['sections_hits'], 1)
         self.assertEqual(stats['section_configs_gets'], 3)
         self.assertEqual(stats['section_configs_hits'], 1)
+
+
+class TestFilters(unittest.TestCase):
+
+    def test_get_body(self):
+        self.assertEqual(filters.get_body({}), '')
+        self.assertEqual(filters.get_body({'caption': 'foo'}), '<p>foo</p>')
+        self.assertEqual(filters.get_body({'body': 'foo'}), '<p>foo</p>')
+        self.assertEqual(
+            filters.get_body({'body': "foo\n\nfoo"}),
+            '<p>foo</p>\n\n<p>foo</p>')
+        self.assertEqual(
+            filters.get_body({'body': 'foo<br/> <br >foo'}),
+            '<p>foo</p>\n\n<p>foo</p>')
+        self.assertEqual(
+            filters.get_body({'body': '<p>foo<br/> <br >foo</p>'}),
+            '<p>foo</p>\n\n<p>foo</p>')
+        self.assertEqual(
+            filters.get_body({'body': '<p>foo<br/>&nbsp;<br >foo</p>'}),
+            '<p>foo</p>\n\n<p>foo</p>')
+        self.assertEqual(
+            filters.get_body({'body': '<p>foo<br/>foo<br>&nbsp;<br >foo</p>'}),
+            '<p>foo<br/>foo</p>\n\n<p>foo</p>')
+
+    def test_get_brief(self):
+        self.assertEqual(filters.get_brief({'abstract': 'foo'}), 'foo')
+        self.assertEqual(
+            filters.get_brief({'content_item': {'body': 'foo'}}),
+            'foo')
+
+    def test_get_head(self):
+        self.assertEqual(filters.get_headline({'title': 'foo'}), 'foo')
+        self.assertEqual(
+            filters.get_headline({'headline': 'foo'}), 'foo')
+        self.assertEqual(
+            filters.get_headline({'content_item': {'title': 'foo'}}), 'foo')
+
+    def test_get_url(self):
+        self.assertEqual(
+            filters.get_url({'web_url': 'bar'}), 'bar')
+        self.assertEqual(
+            filters.get_url({'url': 'foo', 'web_url': 'bar'}), 'bar')
+        self.assertEqual(
+            filters.get_url({
+                'content_item_type_code': 'storylink',
+                'url': 'foo',
+                'web_url': 'bar'
+            }), 'foo')
+
+    def test_get_thumb_url(self):
+        self.assertEqual(
+            filters.get_thumb_url({}, 600), '')
+        self.assertEqual(
+            filters.get_thumb_url({
+                'alt_thumbnail_url': 'http://www.trbimg.com/foo/187/16x9'
+            }, 600), 'http://www.trbimg.com/foo/600')
+        self.assertEqual(
+            filters.get_thumb_url({
+                'thumbnail_url': 'http://www.trbimg.com/foofoo/187/16x9'
+            }, 600, '1x1'), 'http://www.trbimg.com/foofoo/600/1x1')
+        self.assertEqual(
+            filters.get_thumb_url({
+                'photo_services_url': 'http://www.trbimg.com/foofoo'
+            }, 400), 'http://www.trbimg.com/foofoo/400')
+
+    def test_get_time(self):
+        self.assertEqual(
+            filters.get_time({'display_time': 'foo'}),
+            'foo')
+        self.assertEqual(
+            filters.get_time({'content_item': {'display_time': 'foo'}}),
+            'foo')
+        self.assertEqual(
+            filters.get_time({'content_item': {'create_time': 'foo'}}),
+            'foo')
+
+    def test_get_featured_related_item(self):
+        self.assertEqual(
+            filters.get_featured_related_item({
+                'content_item': {
+                    'related_items': [
+                        {'content_item_type_code': 'article'},
+                        {'content_item_type_code': 'storylink'},
+                        {'content_item_type_code': 'photogallery'},
+                        {'content_item_type_code': 'photo'}
+                    ]
+                }
+            }), {'content_item_type_code': 'photogallery'})
+
+    def test_find_content_item(self):
+        self.assertEqual(
+            filters.find_content_item({'content_item': {'foo': 'bar'}}),
+            {'foo': 'bar'})
+        self.assertEqual(
+            filters.find_content_item({'foo': 'bar'}),
+            {'foo': 'bar'})
+
+    def test_br_to_space(self):
+        self.assertEqual(
+            filters.br_to_space('foo<br> <br />foo'),
+            'foo foo')
+        self.assertEqual(
+            filters.br_to_space('foo<br/>&nbsp;<br/>foo'),
+            'foo foo')
+
+    def test_split_paragraphs(self):
+        self.assertEqual(
+            filters.split_paragraphs('<p>foo</p> <p>foo</p>'),
+            ['<p>foo</p>', '<p>foo</p>'])
+
+    def test_br_to_p(self):
+        self.assertEqual(
+            filters.br_to_p('foo<br> <br />foo'),
+            '<p>foo</p>\n\n<p>foo</p>')
+        self.assertEqual(
+            filters.br_to_p('foo<br/>&nbsp;<br/>foo'),
+            '<p>foo</p>\n\n<p>foo</p>')
+
+    def test_section_heads(self):
+        self.assertEqual(
+            filters.section_heads('<p>foo</p> <p><b>head</b></p> <p>foo</p>'),
+            '<p>foo</p> <h4>head</h4> <p>foo</p>')
+
+    def test_strip_runtime_tags(self):
+        self.assertEqual(
+            filters.strip_runtime_tags(
+                '<p>foo <runtime:topic>obama</runtime:topic> foo</p> <p>foo</p>'),
+            '<p>foo obama foo</p> <p>foo</p>')
+
+    def test_strip_tags(self):
+        self.assertEqual(
+            filters.strip_tags('<p>foo</p> <p><b>head</b></p> <p>foo</p>'),
+            'foo head foo')
 
 
 if __name__ == '__main__':
