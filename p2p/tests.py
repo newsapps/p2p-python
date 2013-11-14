@@ -1,10 +1,7 @@
-#! /usr/bin/env python
 import unittest
 
-from __init__ import get_connection, P2PNotFound, P2PSlugTaken
-from auth import authenticate, P2PAuthError
-import cache
-import filters
+from p2p import get_connection, P2PNotFound, P2PSlugTaken, cache, filters
+from p2p.auth import authenticate, P2PAuthError
 
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
@@ -484,14 +481,3 @@ class TestFilters(unittest.TestCase):
         self.assertEqual(
             filters.strip_tags('<p>foo</p> <p><b>head</b></p> <p>foo</p>'),
             'foo head foo')
-
-
-if __name__ == '__main__':
-    import logging
-    logging.basicConfig()
-    log = logging.getLogger()
-
-    # Show debug messages from p2p
-    #log.setLevel(logging.DEBUG)
-
-    unittest.main()

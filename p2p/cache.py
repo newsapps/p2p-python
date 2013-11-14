@@ -397,6 +397,9 @@ try:
                 # we need to grab a copy of the content item in order to
                 # retrieve the id. We need the id to remove the lookup key.
                 content_item = self.get(matching_keys[0])
+                # key is not used
+                if content_item is None:
+                    return False
                 id = content_item['id']
                 lookup_key = self.make_key('content_item', str(id), 'lookup')
 

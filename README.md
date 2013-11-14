@@ -26,3 +26,6 @@ Or you can create a connection object manually. You'll want to do this in order 
         cache=cache.DictionaryCache()
     )
 
+To run tests:
+
+    $ python setup.py test

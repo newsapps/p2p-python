@@ -2,7 +2,6 @@
 Python wrapper for the Content Services API
 
 '''
-import requests
 import json
 import math
 from datetime import datetime
@@ -15,6 +14,9 @@ import utils
 
 import logging
 log = logging.getLogger('p2p')
+
+import requests
+from .adapters import TribP2PAdapter
 
 
 def get_connection():
@@ -126,6 +128,9 @@ class P2P(object):
             "source_code": self.source_code,
             "content_item_state_code": "live",
         }
+
+        self.s = requests.Session()
+        self.s.mount('https://', TribP2PAdapter())
 
     def get_content_item(self, slug, query=None, force_update=False):
         """
@@ -681,7 +686,7 @@ class P2P(object):
         thumb = None
 
         if force_update:
-            resp = requests.get(
+            resp = self.s.get(
                 url,
                 headers=self.http_headers(),
                 verify=False)
@@ -691,7 +696,7 @@ class P2P(object):
         else:
             thumb = self.cache.get_thumb(slug)
             if not thumb:
-                resp = requests.get(
+                resp = self.s.get(
                     url,
                     headers=self.http_headers(),
                     verify=False)
@@ -757,7 +762,7 @@ class P2P(object):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)
 
-        resp = requests.get(
+        resp = self.s.get(
             self.config['P2P_API_ROOT'] + url,
             headers=self.http_headers(if_modified_since=if_modified_since),
             verify=False)
@@ -773,7 +778,7 @@ class P2P(object):
             raise
 
     def delete(self, url):
-        resp = requests.delete(
+        resp = self.s.delete(
             self.config['P2P_API_ROOT'] + url,
             headers=self.http_headers(),
             verify=False)
@@ -783,7 +788,7 @@ class P2P(object):
 
     def post_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
-        resp = requests.post(
+        resp = self.s.post(
             self.config['P2P_API_ROOT'] + url,
             data=payload,
             headers=self.http_headers('application/json'),
@@ -798,7 +803,7 @@ class P2P(object):
 
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
-        resp = requests.put(
+        resp = self.s.put(
             self.config['P2P_API_ROOT'] + url,
             data=payload,
             headers=self.http_headers('application/json'),
