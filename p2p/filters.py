@@ -5,6 +5,9 @@ QUERY_PATTERN = re.compile('\d+(/\d+x\d+)?$')
 
 
 def get_body(content_dict):
+    """
+    Get the content item body or caption, whatever it's called
+    """
     content_item = find_content_item(content_dict)
 
     if content_item.get('body', False):
@@ -20,6 +23,10 @@ def get_body(content_dict):
 
 
 def get_brief(content_dict, words=60):
+    """
+    Get the abstract or brief for an item, or make one to length 'words' from
+    the body
+    """
     if content_dict.get('abstract', False):
         return content_dict['abstract']
     else:
@@ -39,6 +46,9 @@ def get_brief(content_dict, words=60):
 
 
 def get_headline(content_dict):
+    """
+    Get the headline for this item
+    """
     if content_dict.get('headline', False):
         return content_dict['headline']
     else:
@@ -48,6 +58,9 @@ def get_headline(content_dict):
 
 
 def get_url(content_dict):
+    """
+    Get the p2p url for this item, or if it's a link, get the link url
+    """
     content_item = find_content_item(content_dict)
 
     link_types = ('hyperlink', 'storylink')
@@ -59,6 +72,11 @@ def get_url(content_dict):
 
 
 def get_thumb_url(content_dict, size, ratio=None):
+    """
+    Find a thumbnail url in the content item dictionary and adjust the size
+    and ratio parameters before returning the url. Pass 'None' for size to get
+    a url without any size or ratio params.
+    """
     content_item = find_content_item(content_dict)
 
     #If image_url already contains a query, replace it; otherwise, append query.
@@ -75,15 +93,28 @@ def get_thumb_url(content_dict, size, ratio=None):
     if UNQUERYABLE_PATTERN.search(image_url):
         return image_url
 
-    if ratio is None:
+    if size is None:
+        query = ''
+    elif ratio is None:
         query = str(size)
     else:
         query = '/'.join([str(size), ratio])
 
     if QUERY_PATTERN.search(image_url):
-        return QUERY_PATTERN.sub(query, image_url)
+        ret = QUERY_PATTERN.sub(query, image_url)
     else:
-        return '/'.join([image_url, query])
+        ret = '/'.join([image_url.rstrip('/'), query])
+    return ret.rstrip('/')
+
+
+def get_byline(content_dict):
+    """
+    Get the byline for this item
+    """
+    if 'byline' in content_dict:
+        return content_dict['byline']
+    else:
+        return find_content_item(content_dict)['byline']
 
 
 def get_time(content_dict):
@@ -99,6 +130,9 @@ def get_time(content_dict):
 
 
 def get_featured_related_item(content_dict):
+    """
+    Look through related items to find the first photo, gallery or video
+    """
     content_item = find_content_item(content_dict)
     feature_types = (
         'embeddedvideo', 'photogallery', 'photo', 'premiumvideo')
