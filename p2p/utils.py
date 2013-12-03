@@ -103,7 +103,7 @@ def parse_request(data):
 def formatdate(d=datetime.utcnow()):
     try:
         return d.astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    except ValueError:
+    except (ValueError, AttributeError):
         return d.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 

@@ -615,8 +615,10 @@ class P2P(object):
         # now that we've retrieved all the related items, embed them into
         # the original content item dictionary to make it fancy
         for item_stub in content_item['related_items']:
+            item_stub['content_item'] = None
             for item in related_items:
-                if item_stub['relatedcontentitem_id'] == item['id']:
+                if(item is not None
+                        and item_stub['relatedcontentitem_id'] == item['id']):
                     item_stub['content_item'] = item
 
         return content_item

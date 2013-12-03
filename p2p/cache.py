@@ -505,10 +505,16 @@ try:
 
         def log_ls(self, type, id=None):
             if id is None:
-                return self.r.smembers(self.make_key(type))
+                key = self.make_key(type)
             else:
-                data = self.r.smembers(self.make_key(type, id))
-                return [pickle.loads(item) for item in data] if data else []
+                key = self.make_key(type, id)
+
+            while True:
+                query = self.r.spop(key)
+                if query:
+                    yield pickle.loads(query)
+                else:
+                    break
 
         def log_remove(self, type, id, query):
             self.r.srem(

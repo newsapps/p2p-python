@@ -1,6 +1,7 @@
 import unittest
 
-from p2p import get_connection, P2PNotFound, P2PSlugTaken, cache, filters
+from p2p import get_connection, P2PNotFound, P2PSlugTaken,\
+    cache, filters, utils
 from p2p.auth import authenticate, P2PAuthError
 
 import pprint
@@ -303,7 +304,6 @@ class TestP2PCache(unittest.TestCase):
             self.assertEqual(stats['content_item_gets'], 6)
             self.assertEqual(stats['content_item_hits'], 1)
 
-    #@unittest.skip("Beware, will delete everything from redis")
     def test_redis_cache(self):
         content_item_ids = [
             58253183, 56809651, 56810874, 56811192, 58253247]
@@ -322,7 +322,7 @@ class TestP2PCache(unittest.TestCase):
         self.assertTrue(removed)
         self.assertEqual(stats['content_item_gets'], 7)
         self.assertEqual(stats['content_item_hits'], 1)
-        
+
         section_path = '/test/newsapps'
         section = self.p2p.get_section(section_path)
         self.p2p.cache.save_section(section_path, section)
