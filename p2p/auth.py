@@ -1,5 +1,6 @@
 import requests
 import json
+from .adapters import TribAdapter
 
 
 def authenticate(username=None, password=None, token=None, auth_url=None):
@@ -22,7 +23,9 @@ def authenticate(username=None, password=None, token=None, auth_url=None):
                         "No connection settings available. Please put settings"
                         " in your environment variables or your Django config")
 
-        resp = requests.post(
+        s = requests.Session()
+        s.mount('https://', TribAdapter())
+        resp = s.post(
             auth_url,
             params={
                 'username': username,
