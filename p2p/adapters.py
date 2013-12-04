@@ -1,9 +1,8 @@
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
 from requests.packages.urllib3.poolmanager import PoolManager
-import ssl
 
 
-class TribP2PAdapter(HTTPAdapter):
+class TribAdapter(HTTPAdapter):
     def init_poolmanager(self, connections, maxsize, block=DEFAULT_POOLBLOCK):
         self._pool_connections = connections
         self._pool_maxsize = maxsize
@@ -11,4 +10,4 @@ class TribP2PAdapter(HTTPAdapter):
 
         self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize,
                                        block=block,
-                                       ssl_version=ssl.PROTOCOL_SSLv23)
+                                       ssl_version='TLSv1')

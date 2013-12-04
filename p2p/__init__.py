@@ -16,7 +16,7 @@ import logging
 log = logging.getLogger('p2p')
 
 import requests
-from .adapters import TribP2PAdapter
+from .adapters import TribAdapter
 
 
 def get_connection():
@@ -130,7 +130,7 @@ class P2P(object):
         }
 
         self.s = requests.Session()
-        self.s.mount('https://', TribP2PAdapter())
+        self.s.mount('https://', TribAdapter())
 
     def get_content_item(self, slug, query=None, force_update=False):
         """
