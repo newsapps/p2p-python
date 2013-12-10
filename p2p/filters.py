@@ -1,7 +1,7 @@
 import re
 
 UNQUERYABLE_PATTERN = re.compile('\.[a-zA-Z]+$')
-QUERY_PATTERN = re.compile('\d+(/\d+x\d+)?$')
+QUERY_PATTERN = re.compile('/\d+(/\d+x\d+)?$')
 
 
 def get_body(content_dict):
