@@ -101,7 +101,7 @@ def get_thumb_url(content_dict, size, ratio=None):
         query = '/'.join([str(size), ratio])
 
     if QUERY_PATTERN.search(image_url):
-        ret = QUERY_PATTERN.sub(query, image_url)
+        ret = QUERY_PATTERN.sub('/' + query, image_url)
     else:
         ret = '/'.join([image_url.rstrip('/'), query])
     return ret.rstrip('/')
