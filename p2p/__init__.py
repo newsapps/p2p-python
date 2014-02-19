@@ -98,6 +98,7 @@ class P2P(object):
     def __init__(self, url, auth_token,
                  debug=False, cache=NoCache(),
                  image_services_url=None,
+                 content_item_defaults=None,
                  product_affiliate_code='chinews',
                  source_code='chicagotribune',
                  webapp_name='tRibbit'):
@@ -122,7 +123,7 @@ class P2P(object):
             'filter': self.default_filter
         }
 
-        self.content_item_defaults = {
+        self.content_item_defaults = content_item_defaults or {
             "content_item_type_code": "blurb",
             "product_affiliate_code": self.product_affiliate_code,
             "source_code": self.source_code,
