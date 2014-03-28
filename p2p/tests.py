@@ -12,6 +12,8 @@ class TestP2P(unittest.TestCase):
     def setUp(self):
         self.content_item_slug = 'chi-na-lorem-a'
         self.collection_slug = 'chi_na_lorem'
+        self.second_collection_slug = 'chi_na_lorem_ispum'
+
         self.p2p = get_connection()
         self.p2p.debug = True
         self.p2p.config['IMAGE_SERVICES_URL'] = \
@@ -75,6 +77,49 @@ class TestP2P(unittest.TestCase):
 
         res = result2
         self.assertEqual(res, {})
+
+    def test_push_item_into_two_collections(self):
+        data = {
+            'slug': 'chi_na_test_two_collections',
+            'title': 'Testing updating collections in content items',
+            'body': 'lorem ipsum',
+            'content_item_type_code': 'story',
+        }
+
+        try:
+            self.p2p.create_content_item(data)
+        except P2PSlugTaken:
+            pass
+
+        self.assertEqual(self.p2p.push_into_collection(
+            self.collection_slug, [data['slug']]), {})
+
+        data2 = data.copy()
+        data2['body'] = 'Lorem ipsum foo bar'
+
+        self.assertEqual(self.p2p.push_into_collection(
+            self.second_collection_slug, [data['slug']]), {})
+
+        self.p2p.update_content_item(data2)
+
+        first_collection_data = self.p2p.get_fancy_collection(self.collection_slug)
+
+        content_item_included = False
+        for item in first_collection_data['items']:
+            if item['slug'] == data['slug']:
+                content_item_included = True
+
+        second_collection_data = self.p2p.get_fancy_collection(self.second_collection_slug)
+
+        content_item_included_again = False
+        for item in second_collection_data['items']:
+            if item['slug'] == data['slug']:
+                content_item_included_again = True
+
+        self.assertTrue(content_item_included)
+        self.assertTrue(content_item_included_again)
+
+        self.assertTrue(self.p2p.delete_content_item(data['slug']))
 
     def test_get_collection(self):
         data = self.p2p.get_collection(self.collection_slug)
