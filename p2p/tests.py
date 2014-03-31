@@ -1,4 +1,6 @@
 import unittest
+import os
+from getpass import getpass
 
 from p2p import get_connection, P2PNotFound, P2PSlugTaken,\
     cache, filters, utils
@@ -140,19 +142,21 @@ class TestP2P(unittest.TestCase):
         self.assertEqual(
             data, {
                 u'crops': [],
-                u'height': 105,
+                u'height': 1200,
                 u'id': u'turbine/chi-na-lorem-a',
                 u'namespace': u'turbine',
-                u'size': 6138,
+                u'size': 613306,
                 u'slug': u'chi-na-lorem-a',
-                u'url': u'/img-5124e228/turbine/chi-na-lorem-a',
-                u'width': 187
+                u'url': u'/img-5339c184/turbine/chi-na-lorem-a',
+                u'width': 1600
             })
 
     @unittest.skip("Uhhh... not committing my password")
     def test_auth(self):
-        self.username = ''
-        self.password = ''
+        self.username = os.environ.get(
+            'P2P_USERNAME', input('Enter your P2P username'))
+        self.password = os.environ.get(
+            'P2P_USERNAME', getpass('Enter your P2P password'))
 
         self.badpassword = 'password'
 

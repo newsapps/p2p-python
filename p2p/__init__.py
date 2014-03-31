@@ -708,6 +708,51 @@ class P2P(object):
 
         return thumb
 
+    def get_nav(self, collection_code, domain=None):
+        """
+        get a simple dictionary of text and links for a navigation collection
+        """
+        nav = list()
+        domain = domain.replace('http://', '').replace('https://', '').replace('/', '')
+        top_level = self.get_collection_layout(collection_code)
+        for item in top_level['items']:
+            fancy_item = self.get_fancy_content_item(item['slug'])
+            if 'url' not in fancy_item:
+                print fancy_item
+                raise
+            sub_nav = list()
+            for sub_item in fancy_item['related_items']:
+                if 'url' in sub_item['content_item']:
+                    url = sub_item['content_item']['url']
+                elif 'web_url' in sub_item['content_item']:
+                    url = sub_item['content_item']['web_url']
+                else:
+                    print sub_item['content_item']
+                    raise
+
+                if not url.startswith('http'):
+                    url = 'http://' + domain + url
+
+                sub_nav.append({
+                    'text': sub_item['headline'] or sub_item['content_item']['title'],
+                    'url': url,
+                    'slug': sub_item['slug']
+                })
+            if fancy_item['url'].startswith('http'):
+                url = fancy_item['url']
+                path = url[url.find('/') + 1:url.rfind('/')]
+            else:
+                url = 'http://' + domain + fancy_item['url']
+                path = url[url.find('/', 7) + 1:url.rfind('/')]
+            nav.append({
+                'text': fancy_item['title'],
+                'url': url,
+                'slug': fancy_item['slug'],
+                'nav': sub_nav,
+                'path': path
+            })
+        return nav
+
     # Utilities
     def http_headers(self, content_type=None, if_modified_since=None):
         h = {'Authorization': 'Bearer %(P2P_API_KEY)s' % self.config}
