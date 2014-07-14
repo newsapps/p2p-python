@@ -842,11 +842,15 @@ class P2P(object):
             verify=False)
 
         resp_log = self._check_for_errors(resp, url)
-        try:
-            return utils.parse_response(resp.json())
-        except ValueError:
-            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
-            raise
+        
+        if resp.content == "" and resp.status_code < 400:
+            return {}
+        else:
+            try:
+                return utils.parse_response(resp.json())
+            except Exception:
+                log.error('THERE WAS AN EXCEPTION WHILE TRYING TO PARSE YOUR JSON: %s' % resp_log)
+                raise
 
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
@@ -857,11 +861,15 @@ class P2P(object):
             verify=False)
 
         resp_log = self._check_for_errors(resp, url)
-        try:
-            return utils.parse_response(resp.json())
-        except ValueError:
-            log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
-            raise
+
+        if resp.content == "" and resp.status_code < 400:
+            return {}
+        else:
+            try:
+                return utils.parse_response(resp.json())
+            except Exception:
+                log.error('THERE WAS AN EXCEPTION WHILE TRYING TO PARSE YOUR JSON: %s' % resp_log)
+                raise
 
 
 class P2PException(Exception):
