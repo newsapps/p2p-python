@@ -118,7 +118,7 @@ class P2P(object):
         }
 
         self.default_content_item_query = {
-            'include': ['web_url', 'section', 'related_items'],
+            'include': ['web_url', 'section', 'related_items', 'content_topics', 'embedded_items'],
             'filter': self.default_filter
         }
 
