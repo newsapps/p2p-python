@@ -118,7 +118,13 @@ class P2P(object):
         }
 
         self.default_content_item_query = {
-            'include': ['web_url', 'section', 'related_items', 'content_topics', 'embedded_items'],
+            'include': [
+                'web_url',
+                'section',
+                'related_items',
+                'content_topics',
+                'embedded_items'
+            ],
             'filter': self.default_filter
         }
 
@@ -296,7 +302,6 @@ class P2P(object):
         parameter in case the dictionary does not contain a 'slug' key or if
         the dictionary contains a changed slug.
         """
-
         if slug is None:
             slug = topic_id.pop('slug')
 
@@ -320,7 +325,6 @@ class P2P(object):
         parameter in case the dictionary does not contain a 'slug' key or if
         the dictionary contains a changed slug.
         """
-
         if slug is None:
             slug = topic_id.pop('slug')
 
