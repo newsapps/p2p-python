@@ -118,7 +118,13 @@ class P2P(object):
         }
 
         self.default_content_item_query = {
-            'include': ['web_url', 'section', 'related_items'],
+            'include': [
+                'web_url',
+                'section',
+                'related_items',
+                'content_topics',
+                'embedded_items'
+            ],
             'filter': self.default_filter
         }
 
@@ -283,6 +289,52 @@ class P2P(object):
         except NotImplementedError:
             pass
         return resp
+
+    def add_topic(self, topic_id, slug=None):
+        """
+        Update a topic_id item.
+
+        Takes a single dictionary representing the topic_id_item to be updated.
+        Refer to the P2P API docs for the topic_id item field names.
+
+        By default this function uses the value of the 'slug' key from the
+        dictionary to perform the API call. It takes an optional `slug`
+        parameter in case the dictionary does not contain a 'slug' key or if
+        the dictionary contains a changed slug.
+        """
+        if slug is None:
+            slug = topic_id.pop('slug')
+
+        d = {'add_topic_ids': topic_id}
+
+        resp = self.put_json("/content_items/%s.json" % slug, d)
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
+
+    def remove_topic(self, topic_id, slug=None):
+        """
+        Update a topic_id item.
+
+        Takes a single dictionary representing the topic_id_item to be updated.
+        Refer to the P2P API docs for the topic_id item field names.
+
+        By default this function uses the value of the 'slug' key from the
+        dictionary to perform the API call. It takes an optional `slug`
+        parameter in case the dictionary does not contain a 'slug' key or if
+        the dictionary contains a changed slug.
+        """
+        if slug is None:
+            slug = topic_id.pop('slug')
+
+        d = {'remove_topic_ids': topic_id}
+
+        resp = self.put_json("/content_items/%s.json" % slug, d)
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
 
     def create_content_item(self, content_item):
         """
