@@ -284,53 +284,53 @@ class P2P(object):
             pass
         return resp
 
-    def add_topic(self, topic_id, slug=None):
+    def add_topic_to_content_item(self, content_and_topic_data):
         """
-        Update a topic_id item.
+        Add a topic to a content item.
 
-        Takes a single dictionary representing the topic_id_item to be updated.
-        Refer to the P2P API docs for the topic_id item field names.
+        Takes a single dictionary containing the slug of the content item to be updated and the topic_id to be added, passing topic_id with "add_topic_ids" . See P2P API docs for further reference.
 
-        By default this function uses the value of the 'slug' key from the
-        dictionary to perform the API call. It takes an optional `slug`
-        parameter in case the dictionary does not contain a 'slug' key or if
-        the dictionary contains a changed slug.
         """
+        if "slug" in content_and_topic_data.keys() and "topic_id" in content_and_topic_data.keys():
 
-        if slug is None:
-            slug = topic_id.pop('slug')
+            if content_and_topic_data["slug"] and content_and_topic_data["topic_id"]:
 
-        d = {'add_topic_ids': topic_id}
+                d = {'add_topic_ids': content_and_topic_data["topic_id"]}
 
-        resp = self.put_json("/content_items/%s.json" % slug, d)
-        try:
-            self.cache.remove_content_item(slug)
-        except NotImplementedError:
-            pass
+                resp = self.put_json("/content_items/%s.json" % content_and_topic_data["slug"], d)
+                try:
+                    self.cache.remove_content_item(content_and_topic_data["slug"])
+                except NotImplementedError:
+                    pass
+            else:
+                print "Missing slug or topic_id value"
+        else:
+            print "Missing slug or topic_id key"
 
-    def remove_topic(self, topic_id, slug=None):
+
+    def remove_topic_from_content_item(self, content_and_topic_data):
+
         """
-        Update a topic_id item.
+        Remove a topic from a content item.
 
-        Takes a single dictionary representing the topic_id_item to be updated.
-        Refer to the P2P API docs for the topic_id item field names.
+        Takes a single dictionary containing the slug of the content item to be updated and the topic_id to be removed, passing topic_id with "add_topic_ids" . See P2P API docs for further reference.
 
-        By default this function uses the value of the 'slug' key from the
-        dictionary to perform the API call. It takes an optional `slug`
-        parameter in case the dictionary does not contain a 'slug' key or if
-        the dictionary contains a changed slug.
         """
+        if "slug" in content_and_topic_data.keys() and "topic_id" in content_and_topic_data.keys():
 
-        if slug is None:
-            slug = topic_id.pop('slug')
+            if content_and_topic_data["slug"] and content_and_topic_data["topic_id"]:
 
-        d = {'remove_topic_ids': topic_id}
+                d = {'remove_topic_ids': content_and_topic_data["topic_id"]}
 
-        resp = self.put_json("/content_items/%s.json" % slug, d)
-        try:
-            self.cache.remove_content_item(slug)
-        except NotImplementedError:
-            pass
+                resp = self.put_json("/content_items/%s.json" % content_and_topic_data["slug"], d)
+                try:
+                    self.cache.remove_content_item(content_and_topic_data["slug"])
+                except NotImplementedError:
+                    pass
+            else:
+                print "Missing slug or topic_id value"
+        else:
+            print "Missing slug or topic_id key"
 
     def create_content_item(self, content_item):
         """
