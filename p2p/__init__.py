@@ -100,7 +100,8 @@ class P2P(object):
                  image_services_url=None,
                  product_affiliate_code='chinews',
                  source_code='chicagotribune',
-                 webapp_name='tRibbit'):
+                 webapp_name='tRibbit',
+                 state_filter='live'):
         self.config = {
             'P2P_API_ROOT': url,
             'P2P_API_KEY': auth_token,
@@ -111,10 +112,11 @@ class P2P(object):
         self.product_affiliate_code = product_affiliate_code
         self.source_code = source_code
         self.webapp_name = webapp_name
+        self.state_filter = state_filter
 
         self.default_filter = {
             'product_affiliate': self.product_affiliate_code,
-            'state': 'live'
+            'state': self.state_filter
         }
 
         self.default_content_item_query = {
