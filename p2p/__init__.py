@@ -465,6 +465,21 @@ class P2P(object):
             pass
         return ret
 
+    def override_layout(self, code, content_item_slugs):
+        """
+        Override Collection Layout
+        """
+        ret = self.put_json(
+            '/collections/override_layout.json?id=%s' % code,
+            {'items': content_item_slugs})
+        try:
+            self.cache.remove_collection(code)
+            self.cache.remove_collection_layout(code)
+        except NotImplementedError:
+            pass
+        return ret
+
+
     def push_into_collection(self, code, content_item_slugs):
         """
         Push a list of content item slugs onto the top of a collection
