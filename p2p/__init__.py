@@ -18,7 +18,9 @@ log = logging.getLogger('p2p')
 import requests
 from .adapters import TribAdapter
 
+from decorators import retry
 
+@retry(Exception)
 def get_connection():
     """
     Get a connected p2p object. This function is meant to auto-discover
@@ -95,6 +97,7 @@ class P2P(object):
                   cache=DjangoCache())
     """
 
+    @retry(Exception)
     def __init__(self, url, auth_token,
                  debug=False, cache=NoCache(),
                  image_services_url=None,
@@ -133,7 +136,8 @@ class P2P(object):
 
         self.s = requests.Session()
         self.s.mount('https://', TribAdapter())
-
+    
+    @retry(Exception)
     def get_content_item(self, slug, query=None, force_update=False):
         """
         Get a single content item by slug.
@@ -160,7 +164,8 @@ class P2P(object):
                 ci = j['content_item']
                 self.cache.save_content_item(ci, query=query)
         return ci
-
+    
+    @retry(Exception)
     def get_multi_content_items(self, ids, query=None, force_update=False):
         """
         Get a bunch of content items at once. We need to use the content items
@@ -259,7 +264,8 @@ class P2P(object):
                 pass
 
         return ret
-
+    
+    @retry(Exception)
     def update_content_item(self, content_item, slug=None):
         """
         Update a content item.
@@ -285,7 +291,8 @@ class P2P(object):
         except NotImplementedError:
             pass
         return resp
-
+    
+    @retry(Exception)
     def add_topic(self, topic_id, slug=None):
         """
         Update a topic_id item.
@@ -309,7 +316,8 @@ class P2P(object):
             self.cache.remove_content_item(slug)
         except NotImplementedError:
             pass
-
+    
+    @retry(Exception)
     def remove_topic(self, topic_id, slug=None):
         """
         Update a topic_id item.
@@ -333,7 +341,8 @@ class P2P(object):
             self.cache.remove_content_item(slug)
         except NotImplementedError:
             pass
-
+    
+    @retry(Exception)
     def create_content_item(self, content_item):
         """
         Create a new content item.
@@ -349,7 +358,8 @@ class P2P(object):
 
         resp = self.post_json('/content_items.json', data)
         return resp
-
+    
+    @retry(Exception)
     def delete_content_item(self, slug):
         """
         Delete the content item out of p2p
@@ -361,7 +371,8 @@ class P2P(object):
         except NotImplementedError:
             pass
         return True if "destroyed successfully" in result else False
-
+    
+    @retry(Exception)
     def create_or_update_content_item(self, content_item):
         """
         Attempts to update a content item, if it doesn't exist, attempts to
@@ -379,7 +390,8 @@ class P2P(object):
             create = True
 
         return (create, response)
-
+    
+    @retry(Exception)
     def junk_content_item(self, slug):
         """
         Sets a content item to junk status.
@@ -388,11 +400,13 @@ class P2P(object):
             'slug': slug,
             'content_item_state_code': 'junk'
         })
-
+    
+    @retry(Exception)
     def search(self, params):
         resp = self.get("/content_items/search.json", params)
         return resp
-
+    
+    @retry(Exception)
     def get_collection(self, code, query=None, force_update=False):
         """
         Get the data for this collection. To get the items in a collection,
@@ -413,7 +427,8 @@ class P2P(object):
                 self.cache.save_collection(collection, query=query)
 
         return collection
-
+    
+    @retry(Exception)
     def create_collection(self, data):
         """
         Create a new collection. Takes a single argument which should be a
@@ -451,7 +466,8 @@ class P2P(object):
             return ret['collection']
         else:
             raise P2PException(ret)
-
+    
+    @retry(Exception)
     def delete_collection(self, code):
         """
         Delete a collection
@@ -464,7 +480,8 @@ class P2P(object):
         except NotImplementedError:
             pass
         return ret
-
+    
+    @retry(Exception)
     def override_layout(self, code, content_item_slugs):
         """
         Override Collection Layout
@@ -479,7 +496,7 @@ class P2P(object):
             pass
         return ret
 
-
+    @retry(Exception)
     def push_into_collection(self, code, content_item_slugs):
         """
         Push a list of content item slugs onto the top of a collection
@@ -494,6 +511,7 @@ class P2P(object):
             pass
         return ret
 
+    @retry(Exception)
     def suppress_in_collection(
             self, code, content_item_slugs, affiliates=[]):
         """
@@ -512,7 +530,8 @@ class P2P(object):
         except NotImplementedError:
             pass
         return ret
-
+    
+    @retry(Exception)
     def insert_position_in_collection(
             self, code, slug, affiliates=[]):
         """
@@ -531,7 +550,8 @@ class P2P(object):
         except NotImplementedError:
             pass
         return ret
-
+    
+    @retry(Exception)
     def push_into_content_item(self, slug, content_item_slugs):
         """
         Push a list of content item slugs onto the top of the related
@@ -545,7 +565,8 @@ class P2P(object):
         except NotImplementedError:
             pass
         return ret
-
+    
+    @retry(Exception)
     def insert_into_content_item(self, slug, content_item_slugs, position=1):
         """
         Insert a list of content item slugs into the related items list for
@@ -561,7 +582,8 @@ class P2P(object):
         except NotImplementedError:
             pass
         return ret
-
+    
+    @retry(Exception)
     def append_into_content_item(self, slug, content_item_slugs):
         """
         Convenience function to append a list of content item slugs to the end
@@ -575,7 +597,8 @@ class P2P(object):
         except NotImplementedError:
             pass
         return ret
-
+    
+    @retry(Exception)
     def get_collection_layout(self, code, query=None, force_update=False):
         if not query:
             query = {
@@ -599,7 +622,8 @@ class P2P(object):
                     collection_layout, query=query)
 
         return collection_layout
-
+    
+    @retry(Exception)
     def get_fancy_collection(self, code, with_collection=False,
                              limit_items=25, content_item_query=None,
                              collection_query=None, include_suppressed=False,
@@ -655,7 +679,8 @@ class P2P(object):
                     break
 
         return collection_layout
-
+    
+    @retry(Exception)
     def get_fancy_content_item(self, slug, query=None,
                                related_items_query=None,
                                force_update=False):
@@ -687,7 +712,8 @@ class P2P(object):
                     item_stub['content_item'] = item
 
         return content_item
-
+    
+    @retry(Exception)
     def get_section(self, path, query=None, force_update=False):
         if query is None:
             query = {
@@ -707,7 +733,8 @@ class P2P(object):
                 self.cache.save_section(path, section, query)
 
         return section
-
+    
+    @retry(Exception)
     def get_section_configs(self, path, query=None, force_update=False):
         if query is None:
             query = {
@@ -727,7 +754,8 @@ class P2P(object):
                 self.cache.save_section_configs(path, section, query)
 
         return section
-
+    
+    @retry(Exception)
     def get_fancy_section(self, path, force_update=False):
         section = self.get_section(path, force_update)
         config = self.get_section_configs(path, force_update)
@@ -742,7 +770,8 @@ class P2P(object):
         fancy_section['collections'] = collections
         fancy_section['path'] = path
         return fancy_section
-
+    
+    @retry(Exception)
     def get_thumb_for_slug(self, slug, force_update=False):
         """
         Get information on how to display images associated with this slug
@@ -772,7 +801,8 @@ class P2P(object):
                     self.cache.save_thumb(thumb)
 
         return thumb
-
+    
+    @retry(Exception)
     def get_nav(self, collection_code, domain=None):
         """
         get a simple dictionary of text and links for a navigation collection
@@ -818,7 +848,7 @@ class P2P(object):
             })
         return nav
 
-    # Utilities
+    @retry(Exception)
     def http_headers(self, content_type=None, if_modified_since=None):
         h = {'Authorization': 'Bearer %(P2P_API_KEY)s' % self.config}
 
@@ -832,7 +862,8 @@ class P2P(object):
             h['If-Modified-Since'] = if_modified_since
 
         return h
-
+    
+    @retry(Exception)
     def _check_for_errors(self, resp, req_url):
         request_log = {
             'REQ_URL': req_url,
@@ -869,7 +900,8 @@ class P2P(object):
             raise P2PException(resp.content, request_log)
 
         return request_log
-
+    
+    @retry(Exception)
     def get(self, url, query=None, if_modified_since=None):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)
@@ -888,7 +920,8 @@ class P2P(object):
         except ValueError:
             log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise
-
+    
+    @retry(Exception)
     def delete(self, url):
         resp = self.s.delete(
             self.config['P2P_API_ROOT'] + url,
@@ -897,7 +930,8 @@ class P2P(object):
 
         self._check_for_errors(resp, url)
         return utils.parse_response(resp.content)
-
+    
+    @retry(Exception)
     def post_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.post(
@@ -916,7 +950,8 @@ class P2P(object):
             except Exception:
                 log.error('THERE WAS AN EXCEPTION WHILE TRYING TO PARSE YOUR JSON: %s' % resp_log)
                 raise
-
+    
+    @retry(Exception)
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.put(
