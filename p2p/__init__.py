@@ -513,6 +513,24 @@ class P2P(object):
             pass
         return ret
 
+    def remove_in_collection(
+            self, code, content_item_slugs):
+        """
+        Remove a list of slugs in the specified collection
+        """
+        ret = self.put_json(
+            '/collections/remove_items.json?id=%s' % code,
+            {'items': [{
+                'slug': slug
+            } for slug in content_item_slugs]})
+        try:
+            self.cache.remove_collection(code)
+            self.cache.remove_collection_layout(code)
+        except NotImplementedError:
+            pass
+        return ret
+
+
     def insert_position_in_collection(
             self, code, slug, affiliates=[]):
         """
