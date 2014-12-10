@@ -513,16 +513,13 @@ class P2P(object):
             pass
         return ret
 
-    def remove_in_collection(
-            self, code, content_item_slugs):
+    def remove_from_collection(self, code, content_item_slugs):
         """
-        Remove a list of slugs in the specified collection
+        Push a list of content item slugs onto the top of a collection
         """
         ret = self.put_json(
             '/collections/remove_items.json?id=%s' % code,
-            {'items': [{
-                'slug': slug
-            } for slug in content_item_slugs]})
+            {'items': content_item_slugs})
         try:
             self.cache.remove_collection(code)
             self.cache.remove_collection_layout(code)
