@@ -18,6 +18,7 @@ log = logging.getLogger('p2p')
 import requests
 from .adapters import TribAdapter
 
+from decorators import retry
 
 def get_connection():
     """
@@ -885,6 +886,7 @@ class P2P(object):
 
         return request_log
 
+    @retry(Exception)
     def get(self, url, query=None, if_modified_since=None):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)
@@ -904,6 +906,7 @@ class P2P(object):
             log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise
 
+    @retry(Exception)
     def delete(self, url):
         resp = self.s.delete(
             self.config['P2P_API_ROOT'] + url,
@@ -913,6 +916,7 @@ class P2P(object):
         self._check_for_errors(resp, url)
         return utils.parse_response(resp.content)
 
+    @retry(Exception)
     def post_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.post(
@@ -932,6 +936,7 @@ class P2P(object):
                 log.error('THERE WAS AN EXCEPTION WHILE TRYING TO PARSE YOUR JSON: %s' % resp_log)
                 raise
 
+    @retry(Exception)
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.put(
