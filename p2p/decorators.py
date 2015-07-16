@@ -16,7 +16,7 @@ def retry(ExceptionToCheck, tries=100, delay=4, backoff=2):
                     try_one_last_time = False
                     break
                 except p2p.P2PException as e:
-                    if e.args[0].startswith("403"):
+                    if int(e.args[1]["STATUS"]) == 403:
                         time.sleep(mdelay)
                         mtries -= 1
                         mdelay *= backoff
