@@ -1,7 +1,7 @@
 import time
 import p2p
 
-def retry(ExceptionToCheck, tries=100, delay=4, backoff=2):
+def retry(ExceptionToCheck, tries=20, delay=4, backoff=2):
     """
     Retry decorator
     original from http://wiki.python.org/moin/PythonDecoratorLibrary#Retry
