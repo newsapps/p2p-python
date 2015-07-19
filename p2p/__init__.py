@@ -18,6 +18,7 @@ log = logging.getLogger('p2p')
 import requests
 from .adapters import TribAdapter
 
+from decorators import retry
 
 def get_connection():
     """
@@ -100,7 +101,8 @@ class P2P(object):
                  image_services_url=None,
                  product_affiliate_code='chinews',
                  source_code='chicagotribune',
-                 webapp_name='tRibbit'):
+                 webapp_name='tRibbit',
+                 state_filter='live'):
         self.config = {
             'P2P_API_ROOT': url,
             'P2P_API_KEY': auth_token,
@@ -111,10 +113,11 @@ class P2P(object):
         self.product_affiliate_code = product_affiliate_code
         self.source_code = source_code
         self.webapp_name = webapp_name
+        self.state_filter = state_filter
 
         self.default_filter = {
             'product_affiliate': self.product_affiliate_code,
-            'state': 'live'
+            'state': self.state_filter
         }
 
         self.default_content_item_query = {
@@ -463,6 +466,21 @@ class P2P(object):
             pass
         return ret
 
+    def override_layout(self, code, content_item_slugs):
+        """
+        Override Collection Layout
+        """
+        ret = self.put_json(
+            '/collections/override_layout.json?id=%s' % code,
+            {'items': content_item_slugs})
+        try:
+            self.cache.remove_collection(code)
+            self.cache.remove_collection_layout(code)
+        except NotImplementedError:
+            pass
+        return ret
+
+
     def push_into_collection(self, code, content_item_slugs):
         """
         Push a list of content item slugs onto the top of a collection
@@ -495,6 +513,21 @@ class P2P(object):
         except NotImplementedError:
             pass
         return ret
+
+    def remove_from_collection(self, code, content_item_slugs):
+        """
+        Push a list of content item slugs onto the top of a collection
+        """
+        ret = self.put_json(
+            '/collections/remove_items.json?id=%s' % code,
+            {'items': content_item_slugs})
+        try:
+            self.cache.remove_collection(code)
+            self.cache.remove_collection_layout(code)
+        except NotImplementedError:
+            pass
+        return ret
+
 
     def insert_position_in_collection(
             self, code, slug, affiliates=[]):
@@ -853,6 +886,7 @@ class P2P(object):
 
         return request_log
 
+    @retry(Exception)
     def get(self, url, query=None, if_modified_since=None):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)
@@ -872,6 +906,7 @@ class P2P(object):
             log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise
 
+    @retry(Exception)
     def delete(self, url):
         resp = self.s.delete(
             self.config['P2P_API_ROOT'] + url,
@@ -881,6 +916,7 @@ class P2P(object):
         self._check_for_errors(resp, url)
         return utils.parse_response(resp.content)
 
+    @retry(Exception)
     def post_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.post(
@@ -900,6 +936,7 @@ class P2P(object):
                 log.error('THERE WAS AN EXCEPTION WHILE TRYING TO PARSE YOUR JSON: %s' % resp_log)
                 raise
 
+    @retry(Exception)
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.put(
