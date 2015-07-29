@@ -1,3 +1,4 @@
+import os
 import json
 import math
 import utils
@@ -54,7 +55,6 @@ def get_connection():
             )
         )
     except ImportError:
-        import os
         # Try getting settings from environment variables
         if 'P2P_API_KEY' in os.environ:
             kwargs = dict(
