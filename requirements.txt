@@ -1,3 +1,9 @@
+# Development
+pep8
+pyflakes
+coverage
+python-coveralls
+# Requirements
 iso8601
 python-dateutil
 pytz

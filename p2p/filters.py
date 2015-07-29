@@ -64,8 +64,10 @@ def get_url(content_dict):
     content_item = find_content_item(content_dict)
 
     link_types = ('hyperlink', 'storylink')
-    if('content_item_type_code' in content_item
-            and content_item['content_item_type_code'] in link_types):
+    if (
+        'content_item_type_code' in content_item and
+        content_item['content_item_type_code'] in link_types
+    ):
         return content_item['url'] if 'url' in content_item else ""
     else:
         return content_item['web_url']
@@ -79,10 +81,16 @@ def get_thumb_url(content_dict, size, ratio=None):
     """
     content_item = find_content_item(content_dict)
 
-    #If image_url already contains a query, replace it; otherwise, append query.
-    if 'photo_services_url' in content_item and content_item['photo_services_url']:
+    # If image_url already contains query, replace it; otherwise, append query.
+    if (
+        'photo_services_url' in content_item and
+        content_item['photo_services_url']
+    ):
         image_url = content_item['photo_services_url']
-    elif 'alt_thumbnail_url' in content_item and content_item['alt_thumbnail_url']:
+    elif (
+        'alt_thumbnail_url' in content_item and
+        content_item['alt_thumbnail_url']
+    ):
         image_url = content_item['alt_thumbnail_url']
     elif 'thumbnail_url' in content_item and content_item['thumbnail_url']:
         image_url = content_item['thumbnail_url']

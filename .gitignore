@@ -5,3 +5,4 @@ dist
 .DS*
 *.egg
 dump.rdb
+.coverage

@@ -1,7 +1,8 @@
 import time
 import p2p
 
-def retry(ExceptionToCheck, tries=100, delay=4, backoff=2):
+
+def retry(ExceptionToCheck, tries=20, delay=4, backoff=2):
     """
     Retry decorator
     original from http://wiki.python.org/moin/PythonDecoratorLibrary#Retry
@@ -21,9 +22,9 @@ def retry(ExceptionToCheck, tries=100, delay=4, backoff=2):
                         mtries -= 1
                         mdelay *= backoff
                     else:
-		                return f(*args, **kwargs)
+                        return f(*args, **kwargs)
             if try_one_last_time:
                 return f(*args, **kwargs)
             return
-        return f_retry # true decorator
+        return f_retry  # true decorator
     return deco_retry

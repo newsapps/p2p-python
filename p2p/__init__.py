@@ -4,21 +4,18 @@ Python wrapper for the Content Services API
 '''
 import json
 import math
-from datetime import datetime
+import utils
+import logging
+import requests
 from copy import deepcopy
+from cache import NoCache
+from decorators import retry
+from datetime import datetime
+from .adapters import TribAdapter
 from wsgiref.handlers import format_date_time
 from time import mktime
-
-from cache import NoCache
-import utils
-
-import logging
 log = logging.getLogger('p2p')
 
-import requests
-from .adapters import TribAdapter
-
-from decorators import retry
 
 def get_connection():
     """
@@ -121,7 +118,13 @@ class P2P(object):
         }
 
         self.default_content_item_query = {
-            'include': ['web_url', 'section', 'related_items', 'content_topics', 'embedded_items'],
+            'include': [
+                'web_url',
+                'section',
+                'related_items',
+                'content_topics',
+                'embedded_items'
+            ],
             'filter': self.default_filter
         }
 
@@ -305,7 +308,7 @@ class P2P(object):
 
         d = {'add_topic_ids': topic_id}
 
-        resp = self.put_json("/content_items/%s.json" % slug, d)
+        self.put_json("/content_items/%s.json" % slug, d)
         try:
             self.cache.remove_content_item(slug)
         except NotImplementedError:
@@ -329,7 +332,7 @@ class P2P(object):
 
         d = {'remove_topic_ids': topic_id}
 
-        resp = self.put_json("/content_items/%s.json" % slug, d)
+        self.put_json("/content_items/%s.json" % slug, d)
         try:
             self.cache.remove_content_item(slug)
         except NotImplementedError:
@@ -480,7 +483,6 @@ class P2P(object):
             pass
         return ret
 
-
     def push_into_collection(self, code, content_item_slugs):
         """
         Push a list of content item slugs onto the top of a collection
@@ -527,7 +529,6 @@ class P2P(object):
         except NotImplementedError:
             pass
         return ret
-
 
     def insert_position_in_collection(
             self, code, slug, affiliates=[]):
@@ -698,8 +699,10 @@ class P2P(object):
         for item_stub in content_item['related_items']:
             item_stub['content_item'] = None
             for item in related_items:
-                if(item is not None
-                        and item_stub['relatedcontentitem_id'] == item['id']):
+                if (
+                    item is not None and
+                    item_stub['relatedcontentitem_id'] == item['id']
+                ):
                     item_stub['content_item'] = item
 
         return content_item
@@ -794,7 +797,8 @@ class P2P(object):
         get a simple dictionary of text and links for a navigation collection
         """
         nav = list()
-        domain = domain.replace('http://', '').replace('https://', '').replace('/', '')
+        domain = domain.replace(
+            'http://', '').replace('https://', '').replace('/', '')
         top_level = self.get_collection_layout(collection_code)
         for item in top_level['items']:
             fancy_item = self.get_fancy_content_item(item['slug'])
@@ -815,7 +819,8 @@ class P2P(object):
                     url = 'http://' + domain + url
 
                 sub_nav.append({
-                    'text': sub_item['headline'] or sub_item['content_item']['title'],
+                    'text': sub_item['headline'] or
+                    sub_item['content_item']['title'],
                     'url': url,
                     'slug': sub_item['slug']
                 })
@@ -926,14 +931,14 @@ class P2P(object):
             verify=False)
 
         resp_log = self._check_for_errors(resp, url)
-        
+
         if resp.content == "" and resp.status_code < 400:
             return {}
         else:
             try:
                 return utils.parse_response(resp.json())
             except Exception:
-                log.error('THERE WAS AN EXCEPTION WHILE TRYING TO PARSE YOUR JSON: %s' % resp_log)
+                log.error('EXCEPTION IN JSON PARSE: %s' % resp_log)
                 raise
 
     @retry(Exception)
@@ -953,7 +958,7 @@ class P2P(object):
             try:
                 return utils.parse_response(resp.json())
             except Exception:
-                log.error('THERE WAS AN EXCEPTION WHILE TRYING TO PARSE YOUR JSON: %s' % resp_log)
+                log.error('EXCEPTION IN JSON PARSE: %s' % resp_log)
                 raise
 
 

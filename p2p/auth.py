@@ -62,7 +62,7 @@ try:
                 try:
                     user = User.objects.get(username=local_username)
 
-                except User.DoesNotExist, e:
+                except User.DoesNotExist:
                     user = User(
                         username=local_username,
                         email=userinfo['email'],
@@ -74,8 +74,7 @@ try:
                     user.save()
 
                 return user
-
-            except P2PAuthError, e:
+            except P2PAuthError:
                 pass
 
             return None

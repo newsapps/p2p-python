@@ -65,8 +65,10 @@ def parse_response(resp):
         if resp in ("null", "Null"):
             # Null value as a string
             return None
-        elif (_iso8601_full_date.match(resp) is not None
-                or _iso8601_part_date.match(resp) is not None):
+        elif (
+            _iso8601_full_date.match(resp) is not None or
+            _iso8601_part_date.match(resp) is not None
+        ):
             # Date as a string
             return parsedate(resp)
     elif type(resp) is dict:

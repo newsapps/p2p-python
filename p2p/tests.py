@@ -3,7 +3,7 @@ import os
 from getpass import getpass
 
 from p2p import get_connection, P2PNotFound, P2PSlugTaken,\
-    cache, filters, utils
+    cache, filters
 from p2p.auth import authenticate, P2PAuthError
 
 import pprint
@@ -104,14 +104,18 @@ class TestP2P(unittest.TestCase):
 
         self.p2p.update_content_item(data2)
 
-        first_collection_data = self.p2p.get_fancy_collection(self.collection_slug)
+        first_collection_data = self.p2p.get_fancy_collection(
+            self.collection_slug
+        )
 
         content_item_included = False
         for item in first_collection_data['items']:
             if item['slug'] == data['slug']:
                 content_item_included = True
 
-        second_collection_data = self.p2p.get_fancy_collection(self.second_collection_slug)
+        second_collection_data = self.p2p.get_fancy_collection(
+            self.second_collection_slug
+        )
 
         content_item_included_again = False
         for item in second_collection_data['items']:
@@ -169,17 +173,12 @@ class TestP2P(unittest.TestCase):
         for k in self.content_layout_item_keys:
             self.assertIn(k, data['items'][0].keys())
 
-        #for k in self.content_item_keys:
-            #self.assertIn(k, data['items'][0]['content_item'].keys())
-
     def test_fancy_content_item(self):
         data = self.p2p.get_fancy_content_item(
             self.content_item_slug)
 
         for k in ('title', 'id', 'slug'):
             self.assertIn(k, data['related_items'][0]['content_item'])
-
-        #pp.pprint(data)
 
     def test_image_services(self):
         data = self.p2p.get_thumb_for_slug(self.content_item_slug)
@@ -218,15 +217,11 @@ class TestP2P(unittest.TestCase):
         userinfo = authenticate(
             username=self.username, password=self.password)
 
-        #pp.pprint(userinfo)
-
         self.assertEqual(type(userinfo), dict)
 
     def test_get_section(self):
         data = self.p2p.get_section('/news/local/breaking')
-
         self.assertEqual(type(data), dict)
-        #pp.pprint(data)
 
     def test_create_delete_collection(self):
         data = self.p2p.create_collection({
@@ -523,8 +518,10 @@ class TestFilters(unittest.TestCase):
     def test_strip_runtime_tags(self):
         self.assertEqual(
             filters.strip_runtime_tags(
-                '<p>foo <runtime:topic>obama</runtime:topic> foo</p> <p>foo</p>'),
-            '<p>foo obama foo</p> <p>foo</p>')
+                '<p>foo <runtime:topic>obama</runtime:topic> foo</p><p>foo</p>'
+            ),
+            '<p>foo obama foo</p><p>foo</p>'
+        )
 
     def test_strip_tags(self):
         self.assertEqual(
