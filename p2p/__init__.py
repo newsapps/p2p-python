@@ -1,19 +1,16 @@
-'''
-Python wrapper for the Content Services API
-
-'''
 import json
 import math
 import utils
 import logging
 import requests
+from time import mktime
 from copy import deepcopy
 from cache import NoCache
 from decorators import retry
 from datetime import datetime
 from .adapters import TribAdapter
 from wsgiref.handlers import format_date_time
-from time import mktime
+from .errors import P2PException, P2PSlugTaken, P2PNotFound
 log = logging.getLogger('p2p')
 
 
@@ -507,7 +504,11 @@ class P2P(object):
         return ret
 
     def suppress_in_collection(
-            self, code, content_item_slugs, affiliates=[]):
+        self,
+        code,
+        content_item_slugs,
+        affiliates=[]
+    ):
         """
         Suppress a list of slugs in the specified collection
         """
@@ -540,7 +541,11 @@ class P2P(object):
         return ret
 
     def insert_position_in_collection(
-            self, code, slug, affiliates=[]):
+        self,
+        code,
+        slug,
+        affiliates=[]
+    ):
         """
         Suppress a list of slugs in the specified collection
         """
@@ -626,10 +631,16 @@ class P2P(object):
 
         return collection_layout
 
-    def get_fancy_collection(self, code, with_collection=False,
-                             limit_items=25, content_item_query=None,
-                             collection_query=None, include_suppressed=False,
-                             force_update=False):
+    def get_fancy_collection(
+        self,
+        code,
+        with_collection=False,
+        limit_items=25,
+        content_item_query=None,
+        collection_query=None,
+        include_suppressed=False,
+        force_update=False
+    ):
         """
         Make a few API calls to fetch all possible data for a collection
         and its content items. Returns a collection layout with
@@ -682,9 +693,13 @@ class P2P(object):
 
         return collection_layout
 
-    def get_fancy_content_item(self, slug, query=None,
-                               related_items_query=None,
-                               force_update=False):
+    def get_fancy_content_item(
+        self,
+        slug,
+        query=None,
+        related_items_query=None,
+        force_update=False
+    ):
         if query is None:
             query = deepcopy(self.default_content_item_query)
             query['include'].append('related_items')
@@ -897,7 +912,6 @@ class P2P(object):
             except ValueError:
                 pass
             raise P2PException(resp.content, request_log)
-
         return request_log
 
     @retry(Exception)
@@ -969,15 +983,3 @@ class P2P(object):
             except Exception:
                 log.error('EXCEPTION IN JSON PARSE: %s' % resp_log)
                 raise
-
-
-class P2PException(Exception):
-    pass
-
-
-class P2PSlugTaken(P2PException):
-    pass
-
-
-class P2PNotFound(P2PException):
-    pass
