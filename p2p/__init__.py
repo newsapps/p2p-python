@@ -56,9 +56,8 @@ def get_connection():
     except ImportError:
         import os
         # Try getting settings from environment variables
-        if 'P2P_API_KEY' in os.environ and 'P2P_API_URL' in os.environ:
-            return P2P(
-                url=os.environ['P2P_API_URL'],
+        if 'P2P_API_KEY' in os.environ:
+            kwargs = dict(
                 auth_token=os.environ['P2P_API_KEY'],
                 debug=os.environ.get('P2P_API_DEBUG', False),
                 image_services_url=os.environ.get(
@@ -66,9 +65,13 @@ def get_connection():
                     None
                 )
             )
-
-    raise P2PException("No connection settings available. Please put settings "
-                       "in your environment variables or your Django config")
+            if os.environ.get('P2P_API_URL', None):
+                kwargs['url'] = os.environ['P2P_API_URL']
+            return P2P(**kwargs)
+    raise P2PException(
+        "No connection settings available. Please put settings "
+        "in your environment variables or your Django config"
+    )
 
 
 class P2P(object):
