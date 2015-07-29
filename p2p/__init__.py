@@ -51,7 +51,10 @@ def get_connection():
             auth_token=settings.P2P_API_KEY,
             debug=settings.DEBUG,
             image_services_url=getattr(
-                settings, 'P2P_IMAGE_SERVICES_URL', None)
+                settings,
+                'P2P_IMAGE_SERVICES_URL',
+                None
+            )
         )
     except ImportError:
         import os
@@ -62,14 +65,15 @@ def get_connection():
                 auth_token=os.environ['P2P_API_KEY'],
                 debug=os.environ.get('P2P_API_DEBUG', False),
                 image_services_url=os.environ.get(
-                    'P2P_IMAGE_SERVICES_URL', None)
+                    'P2P_IMAGE_SERVICES_URL',
+                    None
+                )
             )
 
     raise P2PException("No connection settings available. Please put settings "
                        "in your environment variables or your Django config")
 
 
-# API calls
 class P2P(object):
     """
     Get a connection to the P2P Content Services API::
@@ -93,13 +97,18 @@ class P2P(object):
                   cache=DjangoCache())
     """
 
-    def __init__(self, url, auth_token,
-                 debug=False, cache=NoCache(),
-                 image_services_url=None,
-                 product_affiliate_code='chinews',
-                 source_code='chicagotribune',
-                 webapp_name='tRibbit',
-                 state_filter='live'):
+    def __init__(
+        self,
+        url,
+        auth_token,
+        debug=False,
+        cache=NoCache(),
+        image_services_url=None,
+        product_affiliate_code='lanews',
+        source_code='latimes',
+        webapp_name='tRibbit',
+        state_filter='live'
+    ):
         self.config = {
             'P2P_API_ROOT': url,
             'P2P_API_KEY': auth_token,
