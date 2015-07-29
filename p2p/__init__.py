@@ -99,8 +99,8 @@ class P2P(object):
 
     def __init__(
         self,
-        url,
         auth_token,
+        url="http://content-api.p2p.tribuneinteractive.com",
         debug=False,
         cache=NoCache(),
         image_services_url=None,
