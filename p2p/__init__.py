@@ -918,7 +918,7 @@ class P2P(object):
                 raise P2PSlugTaken(resp.url, request_log)
             elif u'{"code":["has already been taken"]}' in resp.content:
                 raise P2PSlugTaken(resp.url, request_log)
-            elif resp.status_code == 403 and resp.content == '':
+            elif resp.status_code == 403:
                 raise P2PForbidden(resp.url, request_log)
             try:
                 resp.json()
