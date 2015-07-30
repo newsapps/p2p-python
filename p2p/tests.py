@@ -1,9 +1,6 @@
-import os
 import pprint
 import unittest
-from getpass import getpass
-from p2p import get_connection, P2PNotFound, P2PSlugTaken, cache, filters
-from p2p.auth import authenticate, P2PAuthError
+from p2p import get_connection, P2PNotFound, P2PSlugTaken, filters
 pp = pprint.PrettyPrinter(indent=4)
 
 

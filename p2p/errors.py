@@ -16,3 +16,11 @@ class P2PUniqueConstraintViolated(P2PException):
 
 class P2PForbidden(P2PException):
     pass
+
+
+class P2PEncodingMismatch(P2PException):
+    pass
+
+
+class P2PUnknownAttribute(P2PException):
+    pass

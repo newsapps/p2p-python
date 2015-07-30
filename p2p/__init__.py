@@ -16,7 +16,9 @@ from .errors import (
     P2PSlugTaken,
     P2PNotFound,
     P2PUniqueConstraintViolated,
-    P2PForbidden
+    P2PForbidden,
+    P2PEncodingMismatch,
+    P2PUnknownAttribute
 )
 log = logging.getLogger('p2p')
 
@@ -903,8 +905,12 @@ class P2P(object):
 
         if resp.status_code >= 500:
             try:
-                if u'"errors":["ORA-00001: unique constraint' in resp.content:
+                if u'ORA-00001: unique constraint' in resp.content:
                     raise P2PUniqueConstraintViolated(resp.url, request_log)
+                elif u'incompatible encoding regexp match' in resp.content:
+                    raise P2PEncodingMismatch(resp.url, request_log)
+                elif u'unknown attribute' in resp.content:
+                    raise P2PUnknownAttribute(resp.url, request_log)
                 data = resp.json()
                 if 'errors' in data:
                     raise P2PException(data['errors'][0], request_log)
@@ -927,7 +933,7 @@ class P2P(object):
             raise P2PException(resp.content, request_log)
         return request_log
 
-    @retry(Exception)
+    @retry(P2PForbidden)
     def get(self, url, query=None, if_modified_since=None):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)

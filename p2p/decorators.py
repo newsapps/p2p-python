@@ -1,5 +1,4 @@
 import time
-import p2p
 
 
 def retry(ExceptionToCheck, tries=6, delay=4, backoff=2):
