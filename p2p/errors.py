@@ -8,3 +8,7 @@ class P2PSlugTaken(P2PException):
 
 class P2PNotFound(P2PException):
     pass
+
+
+class P2PUniqueConstraintViolated(P2PException):
+    pass

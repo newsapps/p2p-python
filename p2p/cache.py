@@ -66,7 +66,7 @@ class BaseCache(object):
         # Log our query
         self.log_key('content_item', content_item['slug'], query)
 
-    def remove_content_item(self, slug):
+    def remove_content_item(self, slug=None, id=None):
         raise NotImplementedError
 
     def get_thumb(self, slug):

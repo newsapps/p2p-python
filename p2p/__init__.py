@@ -11,7 +11,12 @@ from decorators import retry
 from datetime import datetime
 from .adapters import TribAdapter
 from wsgiref.handlers import format_date_time
-from .errors import P2PException, P2PSlugTaken, P2PNotFound
+from .errors import (
+    P2PException,
+    P2PSlugTaken,
+    P2PNotFound,
+    P2PUniqueConstraintViolated
+)
 log = logging.getLogger('p2p')
 
 
@@ -897,6 +902,8 @@ class P2P(object):
 
         if resp.status_code >= 500:
             try:
+                if u'"errors":["ORA-00001: unique constraint' in resp.content:
+                    raise P2PUniqueConstraintViolated(resp.url, request_log)
                 data = resp.json()
                 if 'errors' in data:
                     raise P2PException(data['errors'][0], request_log)
@@ -906,7 +913,7 @@ class P2P(object):
         elif resp.status_code == 404:
             raise P2PNotFound(resp.url, request_log)
         elif resp.status_code >= 400:
-            if u'{"slug":["has already been taken"]}' == resp.content:
+            if u'{"slug":["has already been taken"]}' in resp.content:
                 raise P2PSlugTaken(resp.url, request_log)
             elif u'{"code":["has already been taken"]}' in resp.content:
                 raise P2PSlugTaken(resp.url, request_log)
@@ -967,14 +974,15 @@ class P2P(object):
                 log.error('EXCEPTION IN JSON PARSE: %s' % resp_log)
                 raise
 
-    @retry(Exception)
+    # @retry(Exception)
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.put(
             self.config['P2P_API_ROOT'] + url,
             data=payload,
             headers=self.http_headers('application/json'),
-            verify=False)
+            verify=False
+        )
 
         resp_log = self._check_for_errors(resp, url)
 
@@ -982,6 +990,7 @@ class P2P(object):
             return {}
         else:
             try:
+                print resp.__dict__
                 return utils.parse_response(resp.json())
             except Exception:
                 log.error('EXCEPTION IN JSON PARSE: %s' % resp_log)

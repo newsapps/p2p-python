@@ -1,20 +1,18 @@
-import unittest
 import os
-from getpass import getpass
-
-from p2p import get_connection, P2PNotFound, P2PSlugTaken,\
-    cache, filters
-from p2p.auth import authenticate, P2PAuthError
-
 import pprint
+import unittest
+from getpass import getpass
+from p2p import get_connection, P2PNotFound, P2PSlugTaken, cache, filters
+from p2p.auth import authenticate, P2PAuthError
 pp = pprint.PrettyPrinter(indent=4)
 
 
 class TestP2P(unittest.TestCase):
+
     def setUp(self):
         self.content_item_slug = 'chi-na-lorem-a'
-        self.collection_slug = 'chi_na_lorem'
-        self.second_collection_slug = 'chi_na_lorem_ispum'
+        self.collection_slug = 'la_na_lorem'
+        self.second_collection_slug = 'la_na_lorem_ispum'
 
         self.p2p = get_connection()
         self.p2p.debug = True
@@ -55,7 +53,7 @@ class TestP2P(unittest.TestCase):
 
     def test_create_update_delete_content_item(self):
         data = {
-            'slug': 'chi_na_test_create_update_delete',
+            'slug': 'la_na_test_create_update_delete',
             'title': 'Testing creating, updating and deletion',
             'body': 'lorem ipsum',
             'content_item_type_code': 'story',
@@ -82,7 +80,7 @@ class TestP2P(unittest.TestCase):
 
     def test_push_item_into_two_collections(self):
         data = {
-            'slug': 'chi_na_test_two_collections',
+            'slug': 'la_na_test_two_collections',
             'title': 'Testing updating collections in content items',
             'body': 'lorem ipsum',
             'content_item_type_code': 'story',
@@ -93,14 +91,15 @@ class TestP2P(unittest.TestCase):
         except P2PSlugTaken:
             pass
 
-        self.assertEqual(self.p2p.push_into_collection(
-            self.collection_slug, [data['slug']]), {})
+        self.p2p.push_into_collection(self.collection_slug, [data['slug']])
 
         data2 = data.copy()
         data2['body'] = 'Lorem ipsum foo bar'
 
-        self.assertEqual(self.p2p.push_into_collection(
-            self.second_collection_slug, [data['slug']]), {})
+        self.p2p.push_into_collection(
+            self.second_collection_slug,
+            [data['slug']]
+        )
 
         self.p2p.update_content_item(data2)
 
@@ -141,7 +140,7 @@ class TestP2P(unittest.TestCase):
             self.assertIn(k, data['items'][0].keys())
 
     def test_multi_items(self):
-        content_item_ids = [58253183, 56809651, 56810874, 56811192, 58253247]
+        content_item_ids = [84072800, 84024029]
         data = self.p2p.get_multi_content_items(ids=content_item_ids)
         for k in self.content_item_keys:
             self.assertIn(k, data[0].keys())
@@ -175,7 +174,8 @@ class TestP2P(unittest.TestCase):
 
     def test_fancy_content_item(self):
         data = self.p2p.get_fancy_content_item(
-            self.content_item_slug)
+            self.content_item_slug
+        )
 
         for k in ('title', 'id', 'slug'):
             self.assertIn(k, data['related_items'][0]['content_item'])
@@ -195,54 +195,32 @@ class TestP2P(unittest.TestCase):
                 u'width': 1600
             })
 
-    @unittest.skip("Uhhh... not committing my password")
-    def test_auth(self):
-        self.username = os.environ.get(
-            'P2P_USERNAME', input('Enter your P2P username'))
-        self.password = os.environ.get(
-            'P2P_USERNAME', getpass('Enter your P2P password'))
-
-        self.badpassword = 'password'
-
-        self.token = 'whatisthis?'
-
-        with self.assertRaises(P2PAuthError) as err:
-            userinfo = authenticate(
-                username=self.username,
-                password=self.badpassword)
-
-        self.assertEqual(err.exception.message,
-                         'Incorrect username or password')
-
-        userinfo = authenticate(
-            username=self.username, password=self.password)
-
-        self.assertEqual(type(userinfo), dict)
-
     def test_get_section(self):
-        data = self.p2p.get_section('/news/local/breaking')
+        data = self.p2p.get_section('/local')
         self.assertEqual(type(data), dict)
 
     def test_create_delete_collection(self):
         data = self.p2p.create_collection({
-            'code': 'chi_test_api_create',
+            'code': 'la_test_api_create',
             'name': 'Test collection created via API',
-            'section_path': '/test/newsapps'
+            'section_path': '/test'
         })
 
-        self.assertEqual(data['code'], 'chi_test_api_create')
+        self.assertEqual(data['code'], 'la_test_api_create')
         self.assertEqual(data['name'], 'Test collection created via API')
 
-        data = self.p2p.delete_collection('chi_test_api_create')
+        data = self.p2p.delete_collection('la_test_api_create')
 
         self.assertEqual(
-            data, "Collection 'chi_test_api_create' destroyed successfully")
+            data,
+            "Collection 'la_test_api_create' destroyed successfully"
+        )
 
 
 class TestWorkflows(unittest.TestCase):
     def setUp(self):
-        self.content_item_slug = 'chi-na-lorem-a'
-        self.collection_slug = 'chi_na_lorem'
+        self.content_item_slug = 'la-na-lorem-a'
+        self.collection_slug = 'la_na_lorem'
         self.p2p = get_connection()
         self.p2p.debug = True
         self.maxDiff = None
@@ -254,14 +232,14 @@ class TestWorkflows(unittest.TestCase):
         supress the story in the collection.
         """
         article_data = {
-            'slug': 'chi_na_test_create_update_delete',
+            'slug': 'la_na_test_create_update_delete',
             'title': 'Testing creating, updating and deletion',
             'byline': 'By Bobby Tables',
             'body': 'lorem ipsum',
             'content_item_type_code': 'story',
         }
         photo_data = {
-            'slug': 'chi_na_test_create_update_delete_photo',
+            'slug': 'la_na_test_create_update_delete_photo',
             'title': 'Photo: Testing creating, updating and deletion',
             'caption': 'lorem ipsum',
             'content_item_type_code': 'photo',
@@ -302,14 +280,20 @@ class TestWorkflows(unittest.TestCase):
             # Add article to a collection
             self.assertEqual(
                 self.p2p.push_into_collection(
-                    self.collection_slug, [article_data['slug']]),
-                {})
+                    self.collection_slug,
+                    [article_data['slug']]
+                ),
+                {}
+            )
 
             # Suppress the article in the collection
             self.assertEqual(
                 self.p2p.suppress_in_collection(
-                    self.collection_slug, [article_data['slug']]),
-                {})
+                    self.collection_slug,
+                    [article_data['slug']]
+                ),
+                {}
+            )
         finally:
             # Delete the photo
             if photo:
@@ -321,77 +305,77 @@ class TestWorkflows(unittest.TestCase):
                     article_data['slug']))
 
 
-class TestP2PCache(unittest.TestCase):
-    def setUp(self):
-        self.content_item_slug = 'chi-na-lorem-a'
-        self.collection_slug = 'chi_na_lorem'
-        self.p2p = get_connection()
-        self.p2p.debug = True
-        self.maxDiff = None
+# class TestP2PCache(unittest.TestCase):
+#     def setUp(self):
+#         self.content_item_slug = 'la-na-lorem-a'
+#         self.collection_slug = 'la_na_lorem'
+#         self.p2p = get_connection()
+#         self.p2p.debug = True
+#         self.maxDiff = None
 
-    def test_cache(self):
-        # Get a list of availabe classes to test
-        test_backends = ('DictionaryCache', 'DjangoCache')
-        cache_backends = list()
-        for backend in test_backends:
-            if hasattr(cache, backend):
-                cache_backends.append(getattr(cache, backend))
+#     def test_cache(self):
+#         # Get a list of availabe classes to test
+#         test_backends = ('DictionaryCache',) #, 'DjangoCache')
+#         cache_backends = list()
+#         for backend in test_backends:
+#             if hasattr(cache, backend):
+#                 cache_backends.append(getattr(cache, backend))
 
-        content_item_ids = [
-            58253183, 56809651, 56810874, 56811192, 58253247]
+#         content_item_ids = [
+#             58253183, 56809651, 56810874, 56811192, 58253247]
 
-        for cls in cache_backends:
-            self.p2p.cache = cls()
-            self.p2p.get_multi_content_items(ids=content_item_ids)
-            self.p2p.get_content_item(self.content_item_slug)
-            stats = self.p2p.cache.get_stats()
-            self.assertEqual(stats['content_item_gets'], 6)
-            self.assertEqual(stats['content_item_hits'], 1)
+#         for cls in cache_backends:
+#             self.p2p.cache = cls()
+#             self.p2p.get_multi_content_items(ids=content_item_ids)
+#             self.p2p.get_content_item(self.content_item_slug)
+#             stats = self.p2p.cache.get_stats()
+#             self.assertEqual(stats['content_item_gets'], 6)
+#             self.assertEqual(stats['content_item_hits'], 1)
 
-    def test_redis_cache(self):
-        content_item_ids = [
-            58253183, 56809651, 56810874, 56811192, 58253247]
+    # def test_redis_cache(self):
+    #     content_item_ids = [
+    #         58253183, 56809651, 56810874, 56811192, 58253247]
 
-        self.p2p.cache = cache.RedisCache()
-        self.p2p.cache.clear()
-        self.p2p.get_multi_content_items(ids=content_item_ids)
-        self.p2p.get_content_item(self.content_item_slug)
-        stats = self.p2p.cache.get_stats()
-        self.assertEqual(stats['content_item_gets'], 6)
-        self.assertEqual(stats['content_item_hits'], 1)
+    #     self.p2p.cache = cache.RedisCache()
+    #     self.p2p.cache.clear()
+    #     self.p2p.get_multi_content_items(ids=content_item_ids)
+    #     self.p2p.get_content_item(self.content_item_slug)
+    #     stats = self.p2p.cache.get_stats()
+    #     self.assertEqual(stats['content_item_gets'], 6)
+    #     self.assertEqual(stats['content_item_hits'], 1)
 
-        removed = self.p2p.cache.remove_content_item(self.content_item_slug)
-        self.p2p.get_content_item(self.content_item_slug)
-        stats = self.p2p.cache.get_stats()
-        self.assertTrue(removed)
-        self.assertEqual(stats['content_item_gets'], 7)
-        self.assertEqual(stats['content_item_hits'], 1)
+    #     removed = self.p2p.cache.remove_content_item(self.content_item_slug)
+    #     self.p2p.get_content_item(self.content_item_slug)
+    #     stats = self.p2p.cache.get_stats()
+    #     self.assertTrue(removed)
+    #     self.assertEqual(stats['content_item_gets'], 7)
+    #     self.assertEqual(stats['content_item_hits'], 1)
 
-        section_path = '/test/newsapps'
-        section = self.p2p.get_section(section_path)
-        self.p2p.cache.save_section(section_path, section)
-        section_configs = self.p2p.get_section_configs(section_path)
-        self.p2p.cache.save_section_configs(section_path, section_configs)
-        section = self.p2p.get_section(section_path)
-        section_configs = self.p2p.get_section_configs(section_path)
-        stats = self.p2p.cache.get_stats()
-        self.assertEqual(stats['sections_gets'], 2)
-        self.assertEqual(stats['sections_hits'], 1)
-        self.assertEqual(stats['section_configs_gets'], 2)
-        self.assertEqual(stats['section_configs_hits'], 1)
+    #     section_path = '/test/newsapps'
+    #     section = self.p2p.get_section(section_path)
+    #     self.p2p.cache.save_section(section_path, section)
+    #     section_configs = self.p2p.get_section_configs(section_path)
+    #     self.p2p.cache.save_section_configs(section_path, section_configs)
+    #     section = self.p2p.get_section(section_path)
+    #     section_configs = self.p2p.get_section_configs(section_path)
+    #     stats = self.p2p.cache.get_stats()
+    #     self.assertEqual(stats['sections_gets'], 2)
+    #     self.assertEqual(stats['sections_hits'], 1)
+    #     self.assertEqual(stats['section_configs_gets'], 2)
+    #     self.assertEqual(stats['section_configs_hits'], 1)
 
-        removed_section = self.p2p.cache.remove_section(section_path)
-        removed_section_configs = self.p2p.cache.remove_section_configs(
-            section_path)
-        section = self.p2p.get_section(section_path)
-        section_configs = self.p2p.get_section_configs(section_path)
-        stats = self.p2p.cache.get_stats()
-        self.assertTrue(removed_section)
-        self.assertTrue(removed_section_configs)
-        self.assertEqual(stats['sections_gets'], 3)
-        self.assertEqual(stats['sections_hits'], 1)
-        self.assertEqual(stats['section_configs_gets'], 3)
-        self.assertEqual(stats['section_configs_hits'], 1)
+    #     removed_section = self.p2p.cache.remove_section(section_path)
+    #     removed_section_configs = self.p2p.cache.remove_section_configs(
+    #         section_path)
+    #     section = self.p2p.get_section(section_path)
+    #     section_configs = self.p2p.get_section_configs(section_path)
+    #     stats = self.p2p.cache.get_stats()
+    #     self.assertTrue(removed_section)
+    #     self.assertTrue(removed_section_configs)
+    #     self.assertEqual(stats['sections_gets'], 3)
+    #     self.assertEqual(stats['sections_hits'], 1)
+    #     self.assertEqual(stats['section_configs_gets'], 3)
+    #     self.assertEqual(stats['section_configs_hits'], 1)
 
 
 class TestFilters(unittest.TestCase):
