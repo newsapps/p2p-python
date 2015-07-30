@@ -15,7 +15,8 @@ from .errors import (
     P2PException,
     P2PSlugTaken,
     P2PNotFound,
-    P2PUniqueConstraintViolated
+    P2PUniqueConstraintViolated,
+    P2PForbidden
 )
 log = logging.getLogger('p2p')
 
@@ -917,6 +918,8 @@ class P2P(object):
                 raise P2PSlugTaken(resp.url, request_log)
             elif u'{"code":["has already been taken"]}' in resp.content:
                 raise P2PSlugTaken(resp.url, request_log)
+            elif resp.status_code == 403 and resp.content == '':
+                raise P2PForbidden(resp.url, request_log)
             try:
                 resp.json()
             except ValueError:
@@ -944,7 +947,7 @@ class P2P(object):
             log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise
 
-    @retry(Exception)
+    @retry(P2PForbidden)
     def delete(self, url):
         resp = self.s.delete(
             self.config['P2P_API_ROOT'] + url,
@@ -954,7 +957,7 @@ class P2P(object):
         self._check_for_errors(resp, url)
         return utils.parse_response(resp.content)
 
-    @retry(Exception)
+    @retry(P2PForbidden)
     def post_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.post(
@@ -974,7 +977,7 @@ class P2P(object):
                 log.error('EXCEPTION IN JSON PARSE: %s' % resp_log)
                 raise
 
-    # @retry(Exception)
+    @retry(P2PForbidden)
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.put(

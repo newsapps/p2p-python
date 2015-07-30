@@ -12,3 +12,7 @@ class P2PNotFound(P2PException):
 
 class P2PUniqueConstraintViolated(P2PException):
     pass
+
+
+class P2PForbidden(P2PException):
+    pass
