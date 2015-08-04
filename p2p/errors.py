@@ -24,3 +24,7 @@ class P2PEncodingMismatch(P2PException):
 
 class P2PUnknownAttribute(P2PException):
     pass
+
+
+class P2PInvalidAccessDefinition(P2PException):
+    pass

@@ -8,6 +8,7 @@ class TestP2P(unittest.TestCase):
 
     def setUp(self):
         self.content_item_slug = 'chi-na-lorem-a'
+        self.htmlstory_slug = 'la-ben-s-api-test-20150730'
         self.collection_slug = 'la_na_lorem'
         self.second_collection_slug = 'la_na_lorem_ispum'
 
@@ -44,9 +45,12 @@ class TestP2P(unittest.TestCase):
             'last_modified_time', 'contentitem_id', 'id')
 
     def test_get_content_item(self):
+        # Story
         data = self.p2p.get_content_item(self.content_item_slug)
         for k in self.content_item_keys:
             self.assertIn(k, data.keys())
+        # HTML story
+        data = self.p2p.get_content_item(self.htmlstory_slug)
 
     def test_create_update_delete_content_item(self):
         data = {
@@ -59,7 +63,8 @@ class TestP2P(unittest.TestCase):
         try:
             result = self.p2p.create_content_item(data)
         except P2PSlugTaken:
-            pass
+            self.p2p.delete_content_item(data['slug'])
+            result = self.p2p.create_content_item(data)
 
         data2 = data.copy()
         data2['body'] = 'Lorem ipsum foo bar'
@@ -74,6 +79,54 @@ class TestP2P(unittest.TestCase):
 
         res = result2
         self.assertEqual(res, {})
+
+    def test_create_update_delete_htmlstory(self):
+        data = {
+            'slug': 'la_na_test_create_update_delete-htmlstory',
+            'title': 'Testing creating, updating and deletion',
+            'body': 'lorem ipsum',
+            'content_item_type_code': 'htmlstory',
+        }
+
+        try:
+            result = self.p2p.create_content_item(data)
+        except P2PSlugTaken:
+            self.p2p.delete_content_item(data['slug'])
+            result = self.p2p.create_content_item(data)
+
+        data2 = data.copy()
+        data2['body'] = 'Lorem ipsum foo bar'
+        result2 = self.p2p.update_content_item(data2)
+        self.assertTrue(self.p2p.delete_content_item(data['slug']))
+
+        self.assertIn(
+            'html_story',
+            result.keys()
+        )
+        res = result['html_story']
+        self.assertEqual(res['slug'], data['slug'])
+        self.assertEqual(res['title'], data['title'])
+        self.assertEqual(res['body'].strip(), data['body'])
+
+        res = result2
+        self.assertEqual(res, {})
+
+    def test_right_rail(self):
+        data = {
+            'slug': 'la_na_test_create_update_delete-htmlstory',
+            'title': 'Testing creating, updating and deletion',
+            'body': 'lorem ipsum',
+            'content_item_type_code': 'htmlstory',
+        }
+
+        try:
+            result = self.p2p.create_content_item(data)['html_story']
+        except P2PSlugTaken:
+            self.p2p.delete_content_item(data['slug'])
+            result = self.p2p.create_content_item(data)['html_story']
+
+        self.p2p.hide_right_rail(result['slug'])
+        self.p2p.show_right_rail(result['slug'])
 
     def test_push_item_into_two_collections(self):
         data = {

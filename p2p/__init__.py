@@ -18,7 +18,8 @@ from .errors import (
     P2PUniqueConstraintViolated,
     P2PForbidden,
     P2PEncodingMismatch,
-    P2PUnknownAttribute
+    P2PUnknownAttribute,
+    P2PInvalidAccessDefinition
 )
 log = logging.getLogger('p2p')
 
@@ -298,6 +299,11 @@ class P2P(object):
         if slug is None:
             slug = content.pop('slug')
 
+        try:
+            content.pop("web_url")
+        except KeyError:
+            pass
+
         d = {'content_item': content}
 
         resp = self.put_json("/content_items/%s.json" % slug, d)
@@ -306,6 +312,25 @@ class P2P(object):
         except NotImplementedError:
             pass
         return resp
+
+    def hide_right_rail(self, slug):
+        """
+        Hide the right rail from an HTML story. Provide the slug
+        of the content item you'd like to update.
+        """
+        params = {
+            'custom_param_data': {'htmlstory-rhs-column-ad-enable': 'false'},
+        }
+        return self.update_content_item(params, slug=slug)
+
+    def show_right_rail(self, slug):
+        """
+        Show the right rail on an HTML story
+        """
+        params = {
+            'custom_param_data': {'htmlstory-rhs-column-ad-enable': 'true'},
+        }
+        return self.update_content_item(params, slug=slug)
 
     def add_topic(self, topic_id, slug=None):
         """
@@ -911,6 +936,8 @@ class P2P(object):
                     raise P2PEncodingMismatch(resp.url, request_log)
                 elif u'unknown attribute' in resp.content:
                     raise P2PUnknownAttribute(resp.url, request_log)
+                elif u"Invalid access definition" in resp.content:
+                    raise P2PInvalidAccessDefinition(resp.url, request_log)
                 data = resp.json()
                 if 'errors' in data:
                     raise P2PException(data['errors'][0], request_log)
