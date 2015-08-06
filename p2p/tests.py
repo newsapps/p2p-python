@@ -128,6 +128,23 @@ class TestP2P(unittest.TestCase):
         self.p2p.hide_right_rail(result['slug'])
         self.p2p.show_right_rail(result['slug'])
 
+    def test_robots(self):
+        data = {
+            'slug': 'la_na_test_create_update_delete-htmlstory',
+            'title': 'Testing creating, updating and deletion',
+            'body': 'lorem ipsum',
+            'content_item_type_code': 'htmlstory',
+        }
+
+        try:
+            result = self.p2p.create_content_item(data)['html_story']
+        except P2PSlugTaken:
+            self.p2p.delete_content_item(data['slug'])
+            result = self.p2p.create_content_item(data)['html_story']
+
+        self.p2p.hide_to_robots(result['slug'])
+        self.p2p.show_to_robots(result['slug'])
+
     def test_push_item_into_two_collections(self):
         data = {
             'slug': 'la_na_test_two_collections',

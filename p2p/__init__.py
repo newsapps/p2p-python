@@ -332,6 +332,26 @@ class P2P(object):
         }
         return self.update_content_item(params, slug=slug)
 
+    def show_to_robots(self, slug):
+        """
+        Add metadata to the item so it is seen by robots and remove any
+        noindex and nofollow tags.
+        """
+        params = {
+            'custom_param_data': { 'metadata-robots': '' },
+        }
+        return self.update_content_item(params, slug=slug)
+
+    def hide_to_robots(self, slug):
+        """
+        Add metadata to the item so it is hidden from robots using
+        the noindex and nofollow tags.
+        """
+        params = {
+            'custom_param_data': { 'metadata-robots': 'noindex, nofollow' },
+        }
+        return self.update_content_item(params, slug=slug)
+
     def add_topic(self, topic_id, slug=None):
         """
         Update a topic_id item.
