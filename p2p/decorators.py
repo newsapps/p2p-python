@@ -1,7 +1,7 @@
 import time
 
 
-def retry(ExceptionToCheck, tries=20, delay=4, backoff=2):
+def retry(ExceptionToCheck, tries=100, delay=4, backoff=3):
     """
     Retry decorator
     original from http://wiki.python.org/moin/PythonDecoratorLibrary#Retry
