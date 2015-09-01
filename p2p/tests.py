@@ -182,6 +182,7 @@ class TestP2P(unittest.TestCase):
         #pp.pprint(data)
 
     def test_image_services(self):
+        # TODO: This test will fail if you're not authenticated with P2P.
         data = self.p2p.get_thumb_for_slug(self.content_item_slug)
 
         self.assertEqual(
@@ -276,11 +277,19 @@ class TestWorkflows(unittest.TestCase):
                 }
             }
         }
+        related_article_data = {
+            'slug': 'chi_na_test_create_update_delete_related_article',
+            'title': 'Testing creating, updating, and deletion of related item',
+            'byline': 'By Bobby Tables',
+            'body': 'lorem ipsum',
+            'content_item_type_code': 'story',
+        }
 
         # make sure we're clean
         try:
             self.p2p.delete_content_item(photo_data['slug'])
             self.p2p.delete_content_item(article_data['slug'])
+            self.p2p.delete_content_item(related_article_data['slug'])
         except P2PNotFound:
             pass
 
@@ -298,10 +307,23 @@ class TestWorkflows(unittest.TestCase):
             self.assertEqual(
                 photo['photo']['slug'], photo_data['slug'])
 
+            # Create related article
+            related_article = \
+                self.p2p.create_content_item(related_article_data)
+            self.assertIn('story', related_article)
+            self.assertEqual(
+                related_article['story']['slug'], related_article_data['slug'])
+
             # Add photo as related item to the article
             self.assertEqual(
                 self.p2p.push_into_content_item(
                     article_data['slug'], [photo_data['slug']]),
+                {})
+
+            # Add related article as related item to the article
+            self.assertEqual(
+                self.p2p.push_into_content_item(
+                    article_data['slug'], [related_article_data['slug']]),
                 {})
 
             # Add article to a collection
@@ -316,6 +338,10 @@ class TestWorkflows(unittest.TestCase):
                     self.collection_slug, [article_data['slug']]),
                 {})
         finally:
+            # Delete the related article
+            if related_article:
+                self.assertTrue(self.p2p.delete_content_item(
+                    related_article_data['slug']))
             # Delete the photo
             if photo:
                 self.assertTrue(self.p2p.delete_content_item(
