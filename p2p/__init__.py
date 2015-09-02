@@ -625,7 +625,7 @@ class P2P(object):
         items list for a content item
         """
         ret = self.put_json(
-            '/content_items/prepend.json?id=%s' % slug,
+            '/content_items/prepend_related_items.json?id=%s' % slug,
             {'items': content_item_slugs})
         try:
             self.cache.remove_content_item(slug)
@@ -639,7 +639,7 @@ class P2P(object):
         a content item, starting at the specified position
         """
         ret = self.put_json(
-            '/content_items/insert.json?id=%s' % slug,
+            '/content_items/insert_related_items.json?id=%s' % slug,
             {'items': [{
                 'slug': content_item_slugs[i], 'position': position + i
             } for i in range(len(content_item_slugs))]})
