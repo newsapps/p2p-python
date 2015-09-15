@@ -338,7 +338,7 @@ class P2P(object):
         noindex and nofollow tags.
         """
         params = {
-            'custom_param_data': { 'metadata-robots': '' },
+            'custom_param_data': {'metadata-robots': ''},
         }
         return self.update_content_item(params, slug=slug)
 
@@ -348,7 +348,7 @@ class P2P(object):
         the noindex and nofollow tags.
         """
         params = {
-            'custom_param_data': { 'metadata-robots': 'noindex, nofollow' },
+            'custom_param_data': {'metadata-robots': 'noindex, nofollow'},
         }
         return self.update_content_item(params, slug=slug)
 
