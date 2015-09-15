@@ -852,6 +852,7 @@ class P2P(object):
         thumb = None
 
         if force_update:
+            log.debug("GET: %s" % url)
             resp = self.s.get(
                 url,
                 headers=self.http_headers(),
@@ -862,6 +863,7 @@ class P2P(object):
         else:
             thumb = self.cache.get_thumb(slug)
             if not thumb:
+                log.debug("GET: %s" % url)
                 resp = self.s.get(
                     url,
                     headers=self.http_headers(),
@@ -984,7 +986,7 @@ class P2P(object):
     def get(self, url, query=None, if_modified_since=None):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)
-
+        log.debug("GET: %s" % url)
         resp = self.s.get(
             self.config['P2P_API_ROOT'] + url,
             headers=self.http_headers(if_modified_since=if_modified_since),
@@ -1002,6 +1004,7 @@ class P2P(object):
 
     @retry(P2PForbidden)
     def delete(self, url):
+        log.debug("GET: %s" % url)
         resp = self.s.delete(
             self.config['P2P_API_ROOT'] + url,
             headers=self.http_headers(),
@@ -1013,6 +1016,7 @@ class P2P(object):
     @retry(P2PForbidden)
     def post_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
+        log.debug("GET: %s" % url)
         resp = self.s.post(
             self.config['P2P_API_ROOT'] + url,
             data=payload,

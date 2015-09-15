@@ -1,4 +1,6 @@
 import time
+import logging
+logger = logging.getLogger(__name__)
 
 
 def retry(ExceptionToCheck, tries=100, delay=4, backoff=3):
@@ -16,11 +18,12 @@ def retry(ExceptionToCheck, tries=100, delay=4, backoff=3):
                     try_one_last_time = False
                     break
                 except ExceptionToCheck:
-                    print "Error. Retrying in %s" % mdelay
+                    logger.debug("Error. Retrying in %s" % mdelay)
                     time.sleep(mdelay)
                     mtries -= 1
                     mdelay *= backoff
             if try_one_last_time:
+                logger.debug("Error. Final try in %s" % mdelay)
                 return f(*args, **kwargs)
             return
         return f_retry  # true decorator
