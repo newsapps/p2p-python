@@ -1,6 +1,7 @@
+import os
 import pprint
 import unittest
-from p2p import get_connection, P2PNotFound, P2PSlugTaken, filters
+from p2p import get_connection, P2PNotFound, P2PSlugTaken, filters, P2P
 pp = pprint.PrettyPrinter(indent=4)
 
 
@@ -98,6 +99,42 @@ class TestP2P(unittest.TestCase):
         data2['body'] = 'Lorem ipsum foo bar'
         result2 = self.p2p.update_content_item(data2)
         self.assertTrue(self.p2p.delete_content_item(data['slug']))
+
+        self.assertIn(
+            'html_story',
+            result.keys()
+        )
+        res = result['html_story']
+        self.assertEqual(res['slug'], data['slug'])
+        self.assertEqual(res['title'], data['title'])
+        self.assertEqual(res['body'].strip(), data['body'])
+
+        res = result2
+        self.assertEqual(res, {})
+
+    def test_preserve_embedded_tags(self):
+        data = {
+            'slug': 'la_na_test_create_update_delete-htmlstory',
+            'title': 'Testing creating, updating and deletion',
+            'body': 'lorem ipsum',
+            'content_item_type_code': 'htmlstory',
+        }
+
+        conn = P2P(
+            auth_token=os.environ['P2P_API_KEY'],
+            preserve_embedded_tags=False
+        )
+
+        try:
+            result = conn.create_content_item(data)
+        except P2PSlugTaken:
+            conn.delete_content_item(data['slug'])
+            result = conn.create_content_item(data)
+
+        data2 = data.copy()
+        data2['body'] = 'Lorem ipsum foo bar'
+        result2 = conn.update_content_item(data2)
+        self.assertTrue(conn.delete_content_item(data['slug']))
 
         self.assertIn(
             'html_story',

@@ -57,6 +57,11 @@ def get_connection():
             url=settings.P2P_API_URL,
             auth_token=settings.P2P_API_KEY,
             debug=settings.DEBUG,
+            preserve_embedded_tags=getattr(
+                settings,
+                'P2P_PRESERVE_EMBEDDED_TAGS',
+                True
+            ),
             image_services_url=getattr(
                 settings,
                 'P2P_IMAGE_SERVICES_URL',
@@ -69,6 +74,10 @@ def get_connection():
             kwargs = dict(
                 auth_token=os.environ['P2P_API_KEY'],
                 debug=os.environ.get('P2P_API_DEBUG', False),
+                preserve_embedded_tags=os.environ.get(
+                    'P2P_PRESERVE_EMBEDDED_TAGS',
+                    True
+                ),
                 image_services_url=os.environ.get(
                     'P2P_IMAGE_SERVICES_URL',
                     None
@@ -116,7 +125,8 @@ class P2P(object):
         product_affiliate_code='lanews',
         source_code='latimes',
         webapp_name='tRibbit',
-        state_filter='live'
+        state_filter='live',
+        preserve_embedded_tags=True
     ):
         self.config = {
             'P2P_API_ROOT': url,
@@ -129,6 +139,7 @@ class P2P(object):
         self.source_code = source_code
         self.webapp_name = webapp_name
         self.state_filter = state_filter
+        self.preserve_embedded_tags = preserve_embedded_tags
 
         self.default_filter = {
             'product_affiliate': self.product_affiliate_code,
@@ -306,11 +317,18 @@ class P2P(object):
 
         d = {'content_item': content}
 
-        resp = self.put_json("/content_items/%s.json" % slug, d)
+        url = "/content_items/%s.json"
+        url = url % slug
+        if not self.preserve_embedded_tags:
+            url += "?preserve_embedded_tags=false"
+
+        resp = self.put_json(url, d)
+
         try:
             self.cache.remove_content_item(slug)
         except NotImplementedError:
             pass
+
         return resp
 
     def hide_right_rail(self, slug):
@@ -413,7 +431,11 @@ class P2P(object):
         defaults.update(content)
         data = {'content_item': defaults}
 
-        resp = self.post_json('/content_items.json', data)
+        url = '/content_items.json'
+        if not self.preserve_embedded_tags:
+            url += "?preserve_embedded_tags=false"
+
+        resp = self.post_json(url, data)
         return resp
 
     def delete_content_item(self, slug):
@@ -1021,7 +1043,8 @@ class P2P(object):
             self.config['P2P_API_ROOT'] + url,
             data=payload,
             headers=self.http_headers('application/json'),
-            verify=False)
+            verify=False
+        )
 
         resp_log = self._check_for_errors(resp, url)
 
