@@ -6,6 +6,7 @@ Configuration settings. Set these values in your environment or your Django sett
     P2P_API_KEY = your_p2p_api_key
     P2P_API_URL = url_of_p2p_endpoint
     P2P_API_DEBUG = plz  # display an http log
+    P2P_PRESERVE_EMBEDDED_TAGS = False # set to false to fix encoding issues with special characters
 
     # Optional
     P2P_IMAGE_SERVICES_URL = url_of_image_services_endpoint
@@ -23,7 +24,8 @@ Or you can create a connection object manually. You'll want to do this in order 
         auth_token='your_p2p_api_key',
         debug=False or True,
         image_services_url='url_of_image_services_endpoint',
-        cache=cache.DictionaryCache()
+        cache=cache.DictionaryCache(),
+        preserve_embedded_tags=False or True
     )
 
 To run tests:
