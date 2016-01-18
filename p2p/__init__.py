@@ -19,7 +19,8 @@ from .errors import (
     P2PForbidden,
     P2PEncodingMismatch,
     P2PUnknownAttribute,
-    P2PInvalidAccessDefinition
+    P2PInvalidAccessDefinition,
+    P2PSearchError
 )
 log = logging.getLogger('p2p')
 
@@ -866,7 +867,9 @@ class P2P(object):
         Get information on how to display images associated with this slug
         """
         url = "%s/photos/turbine/%s.json" % (
-            self.config['IMAGE_SERVICES_URL'], slug)
+            self.config['IMAGE_SERVICES_URL'],
+            slug
+        )
 
         thumb = None
 
@@ -943,16 +946,13 @@ class P2P(object):
     # Utilities
     def http_headers(self, content_type=None, if_modified_since=None):
         h = {'Authorization': 'Bearer %(P2P_API_KEY)s' % self.config}
-
         if content_type is not None:
             h['content-type'] = content_type
-
         if type(if_modified_since) == datetime:
             h['If-Modified-Since'] = format_date_time(
                 mktime(if_modified_since.utctimetuple()))
         elif if_modified_since is not None:
             h['If-Modified-Since'] = if_modified_since
-
         return h
 
     def _check_for_errors(self, resp, req_url):
@@ -979,6 +979,8 @@ class P2P(object):
                     raise P2PUnknownAttribute(resp.url, request_log)
                 elif u"Invalid access definition" in resp.content:
                     raise P2PInvalidAccessDefinition(resp.url, request_log)
+                elif u"solr.tila.trb" in resp.content:
+                    raise P2PSearchError(resp.url, request_log)
                 data = resp.json()
                 if 'errors' in data:
                     raise P2PException(data['errors'][0], request_log)

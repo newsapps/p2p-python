@@ -28,3 +28,7 @@ class P2PUnknownAttribute(P2PException):
 
 class P2PInvalidAccessDefinition(P2PException):
     pass
+
+
+class P2PSearchError(P2PException):
+    pass
