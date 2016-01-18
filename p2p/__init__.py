@@ -125,7 +125,6 @@ class P2P(object):
         product_affiliate_code='lanews',
         source_code='latimes',
         webapp_name='tRibbit',
-        state_filter='live',
         preserve_embedded_tags=True
     ):
         self.config = {
@@ -138,12 +137,10 @@ class P2P(object):
         self.product_affiliate_code = product_affiliate_code
         self.source_code = source_code
         self.webapp_name = webapp_name
-        self.state_filter = state_filter
         self.preserve_embedded_tags = preserve_embedded_tags
 
         self.default_filter = {
-            'product_affiliate': self.product_affiliate_code,
-            'state': self.state_filter
+            'product_affiliate': self.product_affiliate_code
         }
 
         self.default_content_item_query = {
