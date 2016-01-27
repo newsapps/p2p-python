@@ -53,6 +53,16 @@ class TestP2P(unittest.TestCase):
         # HTML story
         data = self.p2p.get_content_item(self.htmlstory_slug)
 
+    def test_related_items(self):
+        # Add
+        data = self.p2p.push_into_content_item(
+            self.content_item_slug, [self.htmlstory_slug])
+        self.assertEqual(len(data["related_items"]), 1)
+        # Remove
+        data = self.p2p.remove_from_content_item(
+            self.content_item_slug, [self.htmlstory_slug])
+        self.assertEqual(len(data["related_items"]), 0)
+
     def test_create_update_delete_content_item(self):
         data = {
             'slug': 'la_na_test_create_update_delete',

@@ -656,6 +656,20 @@ class P2P(object):
             pass
         return ret
 
+    def remove_from_content_item(self, slug, content_item_slugs):
+        """
+        Removes related items from a content item, accepts slug of content item
+        and list of one or more related item slugs
+        """
+        ret = self.put_json(
+            '/content_items/remove_related_items.json?id=%s' % slug,
+            {'items': content_item_slugs})
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
+        return ret
+
     def insert_into_content_item(self, slug, content_item_slugs, position=1):
         """
         Insert a list of content item slugs into the related items list for
