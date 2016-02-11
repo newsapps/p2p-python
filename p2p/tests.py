@@ -65,6 +65,44 @@ class TestP2P(unittest.TestCase):
         data = self.p2p.get_content_item(self.htmlstory_slug)
         self.assertEqual(len(data["related_items"]), 0)
 
+    def test_embedded_items(self):
+        data = {
+            'slug': 'la_na_test_embed_items-htmlstory',
+            'title': 'Testing embeds and deletion',
+            'body': 'lorem ipsum',
+            'content_item_type_code': 'htmlstory',
+        }
+
+        # Create dummy story because we'll have to delete it
+        try:
+            result = self.p2p.create_content_item(data)
+        except P2PSlugTaken:
+            self.p2p.delete_content_item(data['slug'])
+            result = self.p2p.create_content_item(data)
+
+        # Add
+        self.p2p.push_embed_into_content_item(
+            data['slug'], self.content_item_slug)
+        data2 = self.p2p.get_fancy_content_item(data['slug'])
+        self.assertGreaterEqual(len(data2["embedded_items"]), 1)
+        # Delete (no remove)
+        data2 = data.copy()
+        data2['body'] = 'Lorem ipsum foo bar'
+        result2 = self.p2p.update_content_item(data2)
+        self.assertTrue(self.p2p.delete_content_item(data['slug']))
+
+        self.assertIn(
+            'html_story',
+            result.keys()
+        )
+        res = result['html_story']
+        self.assertEqual(res['slug'], data['slug'])
+        self.assertEqual(res['title'], data['title'])
+        self.assertEqual(res['body'].strip(), data['body'])
+
+        res = result2
+        self.assertEqual(res, {})
+
     def test_create_update_delete_content_item(self):
         data = {
             'slug': 'la_na_test_create_update_delete',

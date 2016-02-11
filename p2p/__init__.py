@@ -656,6 +656,19 @@ class P2P(object):
             pass
         return ret
 
+    def push_embed_into_content_item(self, slug, content_item_slug):
+        """
+        Push a single embedded item into embedded items list
+        """
+        ret = self.put_json(
+            '/content_items/append_embedded_items.json?id=%s' % slug,
+            {'items': [{"slug": content_item_slug}]})
+        try:
+            self.cache.remove_content_item(slug)
+        except NotImplementedError:
+            pass
+        return ret
+
     def remove_from_content_item(self, slug, content_item_slugs):
         """
         Removes related items from a content item, accepts slug of content item
