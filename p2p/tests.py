@@ -66,48 +66,22 @@ class TestP2P(unittest.TestCase):
         self.assertEqual(len(data["related_items"]), 0)
 
     def test_embedded_items(self):
-        data = {
-            'slug': 'la_na_test_embed_items-htmlstory',
-            'title': 'Testing embeds and deletion',
-            'body': 'lorem ipsum',
-            'content_item_type_code': 'htmlstory',
-        }
-
-        # Create dummy story because we'll have to delete it
-        try:
-            result = self.p2p.create_content_item(data)
-        except P2PSlugTaken:
-            self.p2p.delete_content_item(data['slug'])
-            result = self.p2p.create_content_item(data)
-
         # Add
         self.p2p.push_embed_into_content_item(
-            data['slug'], self.content_item_slug)
-        data2 = self.p2p.get_fancy_content_item(data['slug'])
-        self.assertGreaterEqual(len(data2["embedded_items"]), 1)
-        # Delete (no remove)
-        data2 = data.copy()
-        data2['body'] = 'Lorem ipsum foo bar'
-        result2 = self.p2p.update_content_item(data2)
-        self.assertTrue(self.p2p.delete_content_item(data['slug']))
-
-        self.assertIn(
-            'html_story',
-            result.keys()
-        )
-        res = result['html_story']
-        self.assertEqual(res['slug'], data['slug'])
-        self.assertEqual(res['title'], data['title'])
-        self.assertEqual(res['body'].strip(), data['body'])
-
-        res = result2
-        self.assertEqual(res, {})
+            self.htmlstory_slug, [self.content_item_slug])
+        data = self.p2p.get_content_item(self.htmlstory_slug)
+        self.assertEqual(len(data["embedded_items"]), 1)
+        # Remove
+        self.p2p.remove_embed_from_content_item(
+            self.htmlstory_slug, [self.content_item_slug])
+        data = self.p2p.get_content_item(self.htmlstory_slug)
+        self.assertEqual(len(data["embedded_items"]), 0)
 
     def test_create_update_delete_content_item(self):
         data = {
             'slug': 'la_na_test_create_update_delete',
             'title': 'Testing creating, updating and deletion',
-            'body': 'lorem ipsum',
+            'body': 'Updated info',
             'content_item_type_code': 'story',
         }
 
@@ -135,7 +109,7 @@ class TestP2P(unittest.TestCase):
         data = {
             'slug': 'la_na_test_create_update_delete-htmlstory',
             'title': 'Testing creating, updating and deletion',
-            'body': 'lorem ipsum',
+            'body': 'Updated info 2',
             'content_item_type_code': 'htmlstory',
         }
 
@@ -146,7 +120,7 @@ class TestP2P(unittest.TestCase):
             result = self.p2p.create_content_item(data)
 
         data2 = data.copy()
-        data2['body'] = 'Lorem ipsum foo bar'
+        data2['body'] = 'Lorem ipsum foo bar 2'
         result2 = self.p2p.update_content_item(data2)
         self.assertTrue(self.p2p.delete_content_item(data['slug']))
 
@@ -166,7 +140,7 @@ class TestP2P(unittest.TestCase):
         data = {
             'slug': 'la_na_test_create_update_delete-htmlstory',
             'title': 'Testing creating, updating and deletion',
-            'body': 'lorem ipsum',
+            'body': 'lorem ipsum 3',
             'content_item_type_code': 'htmlstory',
         }
 
@@ -202,7 +176,7 @@ class TestP2P(unittest.TestCase):
         data = {
             'slug': 'la_na_test_create_update_delete-htmlstory',
             'title': 'Testing creating, updating and deletion',
-            'body': 'lorem ipsum',
+            'body': 'lorem ipsum 4',
             'content_item_type_code': 'htmlstory',
         }
 
@@ -214,12 +188,13 @@ class TestP2P(unittest.TestCase):
 
         self.p2p.hide_right_rail(result['slug'])
         self.p2p.show_right_rail(result['slug'])
+        self.assertTrue(self.p2p.delete_content_item(data['slug']))
 
     def test_robots(self):
         data = {
             'slug': 'la_na_test_create_update_delete-htmlstory',
             'title': 'Testing creating, updating and deletion',
-            'body': 'lorem ipsum',
+            'body': 'lorem ipsum 5',
             'content_item_type_code': 'htmlstory',
         }
 
@@ -231,12 +206,13 @@ class TestP2P(unittest.TestCase):
 
         self.p2p.hide_to_robots(result['slug'])
         self.p2p.show_to_robots(result['slug'])
+        self.assertTrue(self.p2p.delete_content_item(data['slug']))
 
     def test_push_item_into_two_collections(self):
         data = {
             'slug': 'la_na_test_two_collections',
             'title': 'Testing updating collections in content items',
-            'body': 'lorem ipsum',
+            'body': 'lorem ipsum 6',
             'content_item_type_code': 'story',
         }
 
@@ -389,13 +365,13 @@ class TestWorkflows(unittest.TestCase):
             'slug': 'la_na_test_create_update_delete',
             'title': 'Testing creating, updating and deletion',
             'byline': 'By Bobby Tables',
-            'body': 'lorem ipsum',
+            'body': 'lorem ipsum 7',
             'content_item_type_code': 'story',
         }
         photo_data = {
             'slug': 'la_na_test_create_update_delete_photo',
             'title': 'Photo: Testing creating, updating and deletion',
-            'caption': 'lorem ipsum',
+            'caption': 'lorem ipsum 8',
             'content_item_type_code': 'photo',
             'photo_upload': {
                 'alt_thumbnail': {
