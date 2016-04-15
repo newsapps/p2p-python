@@ -68,7 +68,7 @@ class TestP2P(unittest.TestCase):
     def test_embedded_items(self):
         # Add
         self.p2p.push_embed_into_content_item(
-            self.htmlstory_slug, [self.content_item_slug])
+            self.htmlstory_slug, [self.content_item_slug], ["S"])
         data = self.p2p.get_content_item(self.htmlstory_slug)
         self.assertEqual(len(data["embedded_items"]), 1)
         # Remove

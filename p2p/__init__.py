@@ -656,13 +656,15 @@ class P2P(object):
             pass
         return ret
 
-    def push_embed_into_content_item(self, slug, content_item_slugs):
+    def push_embed_into_content_item(self, slug, content_item_slugs, size="S"):
         """
         Push a list of content item slugs into embedded items list
         """
         ret = self.put_json(
             '/content_items/append_embedded_items.json?id=%s' % slug,
-            {'items': content_item_slugs})
+            {'items': [{
+                'slug': content_item_slugs[i], 'size': size[i]
+            } for i in range(len(content_item_slugs))]})
         try:
             self.cache.remove_content_item(slug)
         except NotImplementedError:
