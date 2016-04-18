@@ -12,6 +12,7 @@ class TestP2P(unittest.TestCase):
         self.htmlstory_slug = 'la-ben-s-api-test-20150730'
         self.collection_slug = 'la_na_lorem'
         self.second_collection_slug = 'la_na_lorem_ispum'
+        self.photo_slug = 'la-test-photo'
 
         self.p2p = get_connection()
         self.p2p.debug = True
@@ -68,12 +69,23 @@ class TestP2P(unittest.TestCase):
     def test_embedded_items(self):
         # Add
         self.p2p.push_embed_into_content_item(
-            self.htmlstory_slug, [self.content_item_slug], ["S"])
+            self.htmlstory_slug,
+            [self.content_item_slug],
+            size="S"
+        )
         data = self.p2p.get_content_item(self.htmlstory_slug)
         self.assertEqual(len(data["embedded_items"]), 1)
+        self.p2p.push_embed_into_content_item(
+            self.htmlstory_slug,
+            [dict(slug=self.photo_slug, size='J'),]
+        )
+        data = self.p2p.get_content_item(self.htmlstory_slug)
+        self.assertEqual(len(data["embedded_items"]), 2)
         # Remove
         self.p2p.remove_embed_from_content_item(
-            self.htmlstory_slug, [self.content_item_slug])
+            self.htmlstory_slug,
+            [self.content_item_slug, self.photo_slug]
+        )
         data = self.p2p.get_content_item(self.htmlstory_slug)
         self.assertEqual(len(data["embedded_items"]), 0)
 

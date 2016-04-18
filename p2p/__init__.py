@@ -659,12 +659,41 @@ class P2P(object):
     def push_embed_into_content_item(self, slug, content_item_slugs, size="S"):
         """
         Push a list of content item slugs into embedded items list
+
+        Accepts a list of slugs and an optional size, which will be applied to
+        all embeds.
+
+            client.push_embed_into_content_item(['slug-1', 'slug-2', 'slug-3'])
+
+            client.push_embed_into_content_item(['slug-1', 'slug-2', 'slug-3'], size='L')
+
+        Also accepts a list of dictionaries that provide a slug and custom size
+        for each embed.
+
+            client.push_embed_into_content_item([
+                dict(slug='slug-1', size='S'),
+                dict(slug='slug-2', size='L'),
+                dict(slug='slug-3', size='L'),
+            ])
         """
+
+        items = []
+        for ci in content_item_slugs:
+            if isinstance(ci, str):
+                d = dict(slug=ci, size=size)
+                items.append(d)
+            elif isinstance(ci, dict):
+                d = dict(
+                    slug=ci['slug'],
+                    size=ci.get("size", size)
+                )
+                items.append(d)
+            else:
+                raise ValueError("content_item_slugs are bad data")
         ret = self.put_json(
             '/content_items/append_embedded_items.json?id=%s' % slug,
-            {'items': [{
-                'slug': content_item_slugs[i], 'size': size[i]
-            } for i in range(len(content_item_slugs))]})
+            {'items': items }
+        )
         try:
             self.cache.remove_content_item(slug)
         except NotImplementedError:
