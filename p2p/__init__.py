@@ -678,14 +678,15 @@ class P2P(object):
         """
 
         items = []
-        for ci in content_item_slugs:
+        for i, ci in enumerate(content_item_slugs):
             if isinstance(ci, str):
-                d = dict(slug=ci, contentitem_size=size)
+                d = dict(slug=ci, contentitem_size=size, position=i)
                 items.append(d)
             elif isinstance(ci, dict):
                 d = dict(
                     slug=ci['slug'],
-                    contentitem_size=ci.get('size', size)
+                    contentitem_size=ci.get('size', size),
+                    position=i
                 )
                 items.append(d)
             else:
