@@ -680,12 +680,12 @@ class P2P(object):
         items = []
         for ci in content_item_slugs:
             if isinstance(ci, str):
-                d = dict(slug=ci, size=size)
+                d = dict(slug=ci, contentitem_size=size)
                 items.append(d)
             elif isinstance(ci, dict):
                 d = dict(
                     slug=ci['slug'],
-                    size=ci.get("size", size)
+                    contentitem_size=ci.get('size', size)
                 )
                 items.append(d)
             else:
@@ -694,6 +694,7 @@ class P2P(object):
             '/content_items/append_embedded_items.json?id=%s' % slug,
             {'items': items }
         )
+        log.debug(items)
         try:
             self.cache.remove_content_item(slug)
         except NotImplementedError:
