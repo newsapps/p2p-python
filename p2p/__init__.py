@@ -694,7 +694,6 @@ class P2P(object):
             '/content_items/append_embedded_items.json?id=%s' % slug,
             {'items': items }
         )
-        log.debug(items)
         try:
             self.cache.remove_content_item(slug)
         except NotImplementedError:

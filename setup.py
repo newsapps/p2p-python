@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="p2p-latimes",
-    version="2.0.9",
+    version="2.0.10",
     packages=find_packages(),
     install_requires=(
         "python-dateutil",
