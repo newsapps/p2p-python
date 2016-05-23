@@ -21,7 +21,8 @@ from .errors import (
     P2PUnknownAttribute,
     P2PInvalidAccessDefinition,
     P2PSearchError,
-    P2PTimeoutError
+    P2PTimeoutError,
+    P2PRetryableError
 )
 log = logging.getLogger('p2p')
 
@@ -666,7 +667,10 @@ class P2P(object):
 
             client.push_embed_into_content_item(['slug-1', 'slug-2', 'slug-3'])
 
-            client.push_embed_into_content_item(['slug-1', 'slug-2', 'slug-3'], size='L')
+            client.push_embed_into_content_item(
+                ['slug-1', 'slug-2', 'slug-3'],
+                size='L'
+            )
 
         Also accepts a list of dictionaries that provide a slug and custom size
         for each embed.
@@ -694,7 +698,7 @@ class P2P(object):
                 raise ValueError("content_item_slugs are bad data")
         ret = self.put_json(
             '/content_items/append_embedded_items.json?id=%s' % slug,
-            {'items': items }
+            {'items': items}
         )
         try:
             self.cache.remove_content_item(slug)
@@ -1082,7 +1086,7 @@ class P2P(object):
             raise P2PException(resp.content, request_log)
         return request_log
 
-    @retry(P2PForbidden)
+    @retry(P2PRetryableError)
     def get(self, url, query=None, if_modified_since=None):
         if query is not None:
             url += '?' + utils.dict_to_qs(query)
@@ -1102,7 +1106,7 @@ class P2P(object):
             log.error('JSON VALUE ERROR ON SUCCESSFUL RESPONSE %s' % resp_log)
             raise
 
-    @retry(P2PForbidden)
+    @retry(P2PRetryableError)
     def delete(self, url):
         log.debug("GET: %s" % url)
         resp = self.s.delete(
@@ -1113,7 +1117,7 @@ class P2P(object):
         self._check_for_errors(resp, url)
         return utils.parse_response(resp.content)
 
-    @retry(P2PForbidden)
+    @retry(P2PRetryableError)
     def post_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         log.debug("GET: %s" % url)
@@ -1135,7 +1139,7 @@ class P2P(object):
                 log.error('EXCEPTION IN JSON PARSE: %s' % resp_log)
                 raise
 
-    @retry(P2PForbidden)
+    @retry(P2PRetryableError)
     def put_json(self, url, data):
         payload = json.dumps(utils.parse_request(data))
         resp = self.s.put(
