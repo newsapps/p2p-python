@@ -20,7 +20,8 @@ from .errors import (
     P2PEncodingMismatch,
     P2PUnknownAttribute,
     P2PInvalidAccessDefinition,
-    P2PSearchError
+    P2PSearchError,
+    P2PTimeoutError
 )
 log = logging.getLogger('p2p')
 
@@ -1057,6 +1058,8 @@ class P2P(object):
                     raise P2PInvalidAccessDefinition(resp.url, request_log)
                 elif u"solr.tila.trb" in resp.content:
                     raise P2PSearchError(resp.url, request_log)
+                elif u"Request Timeout" in resp.content:
+                    raise P2PTimeoutError(resp.url, request_log)
                 data = resp.json()
                 if 'errors' in data:
                     raise P2PException(data['errors'][0], request_log)
