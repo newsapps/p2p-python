@@ -246,3 +246,19 @@ Get a dictionary of text and links for a navigation collection.
 ### Query parameters
 
 See the [P2P API docs](http://content-api.p2p.tribuneinteractive.com/docs) for details on the ["common"](http://content-api.p2p.tribuneinteractive.com/docs/common_parameters) and ["filter"](http://content-api.p2p.tribuneinteractive.com/docs/content_item_filter) query parameters.
+
+### Exceptions
+
+The wrapper scans API responses for known errors to raise relevant Python exceptions.
+
+ * `P2PException` - Base class for other exceptions and fallback when an unknown error occurs.
+ * `P2PSlugTaken` - Raised when creating a content item or changing a slug of an existing item.
+ * `P2PNotFound` - Raised when getting a content item that doesn't exist or otherwise can't be found.
+ * `P2PUniqueConstraintViolated` - Raised when adding a content item into a collection that is already present in the collection.
+ * `P2PEncodingMismatch` - Raised when invalid characters are passed in.  P2P's API currently only supports the latin-1 character set.
+ * `P2PUnknownAttribute`
+ * `P2PInvalidAccessDefinition`
+ * `P2PSearchError` - Raised when P2P's solr search fails.
+ * `P2PRetryableError` - A base exception for errors we retry on failure.
+ * `P2PForbidden` - Raised when the request is refused due to rate limit throttling or invalid credentials are supplied. (Inherits from `P2PRetryableError`)
+ * `P2PTimeoutError` - Raised when when you hit P2P times out on its end. (Inherits from `P2PRetryableError`)
