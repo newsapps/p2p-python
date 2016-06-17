@@ -262,3 +262,5 @@ The wrapper scans API responses for known errors to raise relevant Python except
  * `P2PRetryableError` - A base exception for errors we retry on failure.
  * `P2PForbidden` - Raised when the request is refused due to rate limit throttling or invalid credentials are supplied. (Inherits from `P2PRetryableError`)
  * `P2PTimeoutError` - Raised when when you hit P2P times out on its end. (Inherits from `P2PRetryableError`)
+
+If you encounter unknown errors that you'd like to document, add it [here](p2p/errors.py) and parse it in the [`_check_for_errors` method](p2p/__init__.py#L1039).
