@@ -243,11 +243,57 @@ Get both the collections and metadata of a section.
 
 Get a dictionary of text and links for a navigation collection.
 
-### Query parameters
+## Query parameters
 
 See the [P2P API docs](http://content-api.p2p.tribuneinteractive.com/docs) for details on the ["common"](http://content-api.p2p.tribuneinteractive.com/docs/common_parameters) and ["filter"](http://content-api.p2p.tribuneinteractive.com/docs/content_item_filter) query parameters.
 
-### Exceptions
+## Custom parameters
+
+Content item payload dictionaries accept custom parameters, which is P2P speak for miscellaneous settings, like whether or not to hide sidebar ads, add no-index/no-nollow meta tags or to disable the paywall. Example usage:
+
+    htmlstory_payload = {
+        "title": "Example content item",
+        "slug": "la-test-example-content-item",
+        "custom_param_data": {
+            "my-custom-param": 'true',
+        }
+    }
+
+
+Here is a non-comphrensive list of commonly used custom parameters:
+
+**Generic content items**
+
+* `premium-flag` - Adjusts the paywall setting. Accepts `default`, `premium`, `register`, and `free`. Default is `default`.
+* `redirect-url` - Redirects the content item to another URL. Accepts URLs. Default is an empty string.
+
+**Stories**
+
+* `story-summary` - Used as an excerpt throughout the site. Default is an empty string.
+* `leadart-size` - Adjusts size of the lead art. Accepts `small` and `jumbo`. Default is `small`.
+* `disable-dateline` - Shows or hides the dateline. Accepts `true` or `false`. Default is `false`.
+* `enable-content-commenting` - Adjusts if comments are allowed. Accepts `true` or `false`. Default is `true`.
+* `article-correction-text` - A string containing editorial corrections to the story. Default is an empty string.
+* `disable-publication-date` - Shows or hides the display date/time. Accepts `true` or `false`. Default is `false`.
+
+**HTML stories**
+
+HTML stories use many of the story parameters.
+
+* `htmlstory-byline-enable` - Shows or hides the byline. Accepts `true` or `false`. Default is `true`.
+* `htmlstory-headline-enable` - Shows or hides the headline. Accepts `true` or `false`. Default is `true`.
+* `htmlstory-rhs-column-ad-enable` - Shows or hides the right ad rail. Accepts `true` or `false`. Default is `true`.
+* `htmlstory-top-leaderboard-enable` - Shows or hides the top leaderboard ad unit. Accepts `true` or `false`. Default is `true`.
+
+**Blurbs**
+
+* `ratio-above-840` - Desktop responsive ratio. Default is `56.25`.
+* `ratio-420-840` - Tablet responsive ratio. Default is `56.25`.
+* `ratio-below-420` - Mobile responsive ratio. Default is `56.25`.
+
+Note: Ratios are used to responsively display blurbs as outfits on section pages or as embeds on article pages. Ratios are calculated by dividing the height by the width of the container and multiplying by 100. For example, to get 4:3 as a ratio, divide 3 by 4 and then multiply by 100 to get 75. (3 ÷ 4) * 100 = 75
+
+## Exceptions
 
 The wrapper scans API responses for known errors to raise relevant Python exceptions.
 
