@@ -368,7 +368,7 @@ have been raised")
             self.assertIn(k, data['items'][0].keys())
 
     def test_multi_items(self):
-        data = self.p2p.get_multi_content_items(ids=self.slug_array[:2])
+        data = self.p2p.get_multi_content_items(ids=self.test_story_slugs[:2])
         for k in self.content_item_keys:
             self.assertIn(k, data[0].keys())
 
