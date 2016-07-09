@@ -1064,6 +1064,8 @@ class P2P(object):
                     raise P2PSearchError(resp.url, request_log)
                 elif u"Request Timeout" in resp.content:
                     raise P2PTimeoutError(resp.url, request_log)
+                elif u'Duplicate entry' in resp.content:
+                    raise P2PUniqueConstraintViolated(resp.url, request_log)
                 data = resp.json()
                 if 'errors' in data:
                     raise P2PException(data['errors'][0], request_log)
