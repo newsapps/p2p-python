@@ -13,7 +13,6 @@ pp = pprint.PrettyPrinter(indent=4)
 class TestP2P(unittest.TestCase):
 
     def setUp(self):
-        self.photo_slug = 'la-test-photo'
 
         self.p2p = get_connection()
         self.p2p.debug = True
@@ -49,6 +48,7 @@ class TestP2P(unittest.TestCase):
 
         self.setUpTestStories()
         self.setUpTestHTMLStories()
+        self.setUpTestPhoto()
         self.setUpTestCollections()
 
     def setUpTestStories(self):
@@ -75,6 +75,15 @@ class TestP2P(unittest.TestCase):
             "content_item_type_code": "htmlstory",
             "title": "Temporary htmlstory for unittesting",
             "body": "Placeholder body for the htmlstory"
+        })
+
+    def setUpTestPhoto(self):
+        # Create a test htmlstory
+        self.test_photo_slug = "la-test-p2p-python-temp-photo"
+        self.p2p.create_or_update_content_item({
+            "slug": self.test_photo_slug,
+            "content_item_type_code": "photo",
+            "title": "Temporary photo for unittesting",
         })
 
     def setUpTestCollections(self):
@@ -138,14 +147,14 @@ class TestP2P(unittest.TestCase):
         self.assertEqual(len(data["embedded_items"]), 1)
         self.p2p.push_embed_into_content_item(
             self.test_htmlstory_slug,
-            [dict(slug=self.photo_slug, size='J')]
+            [dict(slug=self.test_photo_slug, size='J')]
         )
         data = self.p2p.get_content_item(self.test_htmlstory_slug)
         self.assertEqual(len(data["embedded_items"]), 2)
         # Remove
         self.p2p.remove_embed_from_content_item(
             self.test_htmlstory_slug,
-            [self.first_test_story_slug, self.photo_slug]
+            [self.first_test_story_slug, self.test_photo_slug]
         )
         data = self.p2p.get_content_item(self.test_htmlstory_slug)
         self.assertEqual(len(data["embedded_items"]), 0)
@@ -294,8 +303,7 @@ class TestP2P(unittest.TestCase):
                 [self.first_test_story_slug]
             )
         except P2PUniqueConstraintViolated:
-            self.fail("P2PUniqueConstraintViolated should not \
-have been raised")
+            self.fail("P2PUniqueConstraintViolated shouldn't have been raised")
 
         # Assert that the second time pushed in, the exception is raised
         with self.assertRaises(P2PUniqueConstraintViolated):
