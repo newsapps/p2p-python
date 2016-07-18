@@ -22,7 +22,8 @@ from .errors import (
     P2PInvalidAccessDefinition,
     P2PSearchError,
     P2PTimeoutError,
-    P2PRetryableError
+    P2PRetryableError,
+    P2PPhotoUploadError
 )
 log = logging.getLogger('p2p')
 
@@ -1066,6 +1067,9 @@ class P2P(object):
                     raise P2PTimeoutError(resp.url, request_log)
                 elif u'Duplicate entry' in resp.content:
                     raise P2PUniqueConstraintViolated(resp.url, request_log)
+                elif (u'Failed to upload image to the photo service'
+                        in resp.content):
+                    raise P2PPhotoUploadError(resp.url, request_log)
                 data = resp.json()
                 if 'errors' in data:
                     raise P2PException(data['errors'][0], request_log)
