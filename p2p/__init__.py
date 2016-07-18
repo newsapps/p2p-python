@@ -15,15 +15,15 @@ from .errors import (
     P2PException,
     P2PSlugTaken,
     P2PNotFound,
-    P2PUniqueConstraintViolated,
     P2PForbidden,
-    P2PEncodingMismatch,
-    P2PUnknownAttribute,
-    P2PInvalidAccessDefinition,
     P2PSearchError,
     P2PTimeoutError,
     P2PRetryableError,
-    P2PPhotoUploadError
+    P2PEncodingMismatch,
+    P2PUnknownAttribute,
+    P2PPhotoUploadError,
+    P2PInvalidAccessDefinition,
+    P2PUniqueConstraintViolated
 )
 log = logging.getLogger('p2p')
 
