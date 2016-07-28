@@ -30,7 +30,15 @@ class P2PSearchError(P2PException):
     pass
 
 
-class P2PPhotoUploadError(P2PException):
+class P2PFileError(P2PException):
+    pass
+
+
+class P2PPhotoUploadError(P2PFileError):
+    pass
+
+
+class P2PInvalidFileType(P2PFileError):
     pass
 
 

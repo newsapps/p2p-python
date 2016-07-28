@@ -15,15 +15,16 @@ from .errors import (
     P2PException,
     P2PSlugTaken,
     P2PNotFound,
-    P2PUniqueConstraintViolated,
     P2PForbidden,
-    P2PEncodingMismatch,
-    P2PUnknownAttribute,
-    P2PInvalidAccessDefinition,
     P2PSearchError,
     P2PTimeoutError,
     P2PRetryableError,
-    P2PPhotoUploadError
+    P2PInvalidFileType,
+    P2PPhotoUploadError,
+    P2PEncodingMismatch,
+    P2PUnknownAttribute,
+    P2PInvalidAccessDefinition,
+    P2PUniqueConstraintViolated
 )
 log = logging.getLogger('p2p')
 
@@ -1070,6 +1071,8 @@ class P2P(object):
                 elif (u'Failed to upload image to the photo service'
                         in resp.content):
                     raise P2PPhotoUploadError(resp.url, request_log)
+                elif u"This file type is not supported" in resp.content:
+                    raise P2PInvalidFileType(resp.url, request_log)
                 data = resp.json()
                 if 'errors' in data:
                     raise P2PException(data['errors'][0], request_log)
