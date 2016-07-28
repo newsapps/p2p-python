@@ -20,9 +20,9 @@ from .errors import (
     P2PTimeoutError,
     P2PRetryableError,
     P2PInvalidFileType,
-    P2PPhotoUploadError,
     P2PEncodingMismatch,
     P2PUnknownAttribute,
+    P2PPhotoUploadError,
     P2PInvalidAccessDefinition,
     P2PUniqueConstraintViolated
 )
