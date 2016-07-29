@@ -13,6 +13,7 @@ from .adapters import TribAdapter
 from wsgiref.handlers import format_date_time
 from .errors import (
     P2PException,
+    P2PFileError,
     P2PSlugTaken,
     P2PNotFound,
     P2PForbidden,
