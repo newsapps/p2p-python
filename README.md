@@ -304,7 +304,10 @@ The wrapper scans API responses for known errors to raise relevant Python except
  * `P2PEncodingMismatch` - Raised when invalid characters are passed in.  P2P's API currently only supports the latin-1 character set.
  * `P2PUnknownAttribute`
  * `P2PInvalidAccessDefinition`
- * `P2PSearchError` - Raised when P2P's solr search fails.
+ * `P2PSearchError` - Raised when P2P's search fails.
+ * `P2PFileError` - A base exception for failed file interactions.
+ * `P2PPhotoUploadError` - Raised when P2P returns "Failed to upload image to the photo service" after attempting to use `photo_upload` in the payload. Usually this means that Photo Services is down. (Inherits from `P2PFileError`)
+ * `P2PInvalidFileType` - Raised when P2P returns "This file type is not supported". Usually this means that there is an invalid photo URL being passed in. (Inherits from `P2PFileError`)
  * `P2PRetryableError` - A base exception for errors we retry on failure.
  * `P2PForbidden` - Raised when the request is refused due to rate limit throttling or invalid credentials are supplied. (Inherits from `P2PRetryableError`)
  * `P2PTimeoutError` - Raised when when you hit P2P times out on its end. (Inherits from `P2PRetryableError`)
