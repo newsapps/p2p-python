@@ -1,4 +1,4 @@
-ipython==1.1.0
+ipython==7.16.3
 iso8601==0.1.8
 python-dateutil==2.2
 pytz==2013.8
